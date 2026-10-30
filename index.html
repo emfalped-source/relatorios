@@ -1,0 +1,1013 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Relatórios EMFAL</title>
+<meta name="theme-color" content="#2f4a7a">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icone-192.png">
+<link rel="apple-touch-icon" href="icone-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;600;700&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+
+:root{color-scheme:light}
+html{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0}
+[hidden]{display:none!important}
+
+/* Layout: caderno de registro da coordenação. Barra superior fixa com abas, coluna única de formulário, histórico em fichas com faixa de gravidade. */
+:root{
+  --bg:#f3f5f4; --surface:#ffffff; --surface-2:#e8eceb; --line:#cfd6d4;
+  --ink:#16302b; --muted:#56695f; --accent:#1f5f52; --accent-ink:#ffffff; --ochre:#b7802a;
+  --leve:#3d7a5a; --media:#b7802a; --grave:#b2402f;
+  --leve-bg:#e2efe7; --media-bg:#f6ead6; --grave-bg:#f6e0dc;
+  --focus:#2b7fff;
+  --f-display:"Zilla Slab", Georgia, "Times New Roman", serif;
+  --f-body:"Public Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --f-mono:"IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f1715; --surface:#16211e; --surface-2:#1d2a27; --line:#2d3d39;
+  --ink:#e3ece8; --muted:#9aaea6; --accent:#5fb39f; --accent-ink:#0b1412; --ochre:#d9a24f;
+  --leve:#6fbf93; --media:#d9a24f; --grave:#e4705d;
+  --leve-bg:#1a2f25; --media-bg:#33281a; --grave-bg:#3a1f1a; --focus:#7fb2ff; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1715; --surface:#16211e; --surface-2:#1d2a27; --line:#2d3d39;
+  --ink:#e3ece8; --muted:#9aaea6; --accent:#5fb39f; --accent-ink:#0b1412; --ochre:#d9a24f;
+  --leve:#6fbf93; --media:#d9a24f; --grave:#e4705d;
+  --leve-bg:#1a2f25; --media-bg:#33281a; --grave-bg:#3a1f1a; --focus:#7fb2ff; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--accent)}
+.wrap{max-width:760px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--accent);color:var(--accent-ink)}
+header.top .wrap{padding-block:14px 0;display:flex;flex-direction:column;gap:10px}
+.brand{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.brand h1{font-family:var(--f-display);font-weight:700;font-size:1.45rem;margin:0;letter-spacing:.01em;text-wrap:balance}
+.brand small{font-family:var(--f-mono);font-size:.72rem;opacity:.85;letter-spacing:.04em;text-transform:uppercase}
+nav.tabs{display:flex;gap:2px;overflow-x:auto}
+nav.tabs button{appearance:none;border:0;background:transparent;color:inherit;font:600 .9rem var(--f-body);padding:10px 14px;border-radius:8px 8px 0 0;opacity:.8;cursor:pointer;white-space:nowrap}
+nav.tabs button[aria-selected="true"]{background:var(--bg);color:var(--ink);opacity:1}
+nav.tabs button:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
+main .wrap{padding-block:20px 48px;display:flex;flex-direction:column;gap:18px}
+
+.banner{border:1px solid var(--line);background:var(--surface-2);padding:10px 14px;border-radius:8px;font-size:.88rem;color:var(--muted)}
+.banner.warn{border-color:var(--media);background:var(--media-bg);color:var(--ink)}
+
+form{display:flex;flex-direction:column;gap:18px}
+fieldset{border:0;margin:0;padding:0;display:flex;flex-direction:column;gap:14px}
+legend{font-family:var(--f-display);font-weight:600;font-size:1.1rem;padding:0;margin-bottom:10px;color:var(--accent)}
+.sheet{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
+label.f{display:flex;flex-direction:column;gap:5px;min-width:0}
+label.f span,.lbl{font-size:.74rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+input[type=text],input[type=date],select,textarea{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:9px 11px;width:100%;min-width:0}
+textarea{min-height:130px;resize:vertical;line-height:1.55}
+input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--focus);outline-offset:1px;border-color:transparent}
+.hint{font-size:.8rem;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{position:relative}
+.chip input{position:absolute;opacity:0;pointer-events:none}
+.chip span{display:inline-block;border:1px solid var(--line);background:var(--bg);padding:7px 12px;border-radius:999px;font-size:.86rem;cursor:pointer;user-select:none}
+.chip input:checked+span{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.chip input:focus-visible+span{outline:2px solid var(--focus);outline-offset:2px}
+.sev .chip input[value=leve]:checked+span{background:var(--leve);border-color:var(--leve)}
+.sev .chip input[value=media]:checked+span{background:var(--media);border-color:var(--media)}
+.sev .chip input[value=grave]:checked+span{background:var(--grave);border-color:var(--grave)}
+.sev .chip input:checked+span{color:#fff}
+
+.actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.btn{appearance:none;font:600 .92rem var(--f-body);border-radius:8px;padding:10px 16px;cursor:pointer;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.danger{color:var(--grave);border-color:var(--grave)}
+.btn.small{padding:6px 11px;font-size:.82rem}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.status-msg{font-size:.88rem;color:var(--muted)}
+
+/* Documento */
+.doc{background:#fff;color:#111;border:1px solid var(--line);border-radius:4px;padding:28px 26px;font-family:Calibri,Carlito,"Public Sans",sans-serif;font-size:14px;line-height:1.55}
+.doc .head{text-align:center;font-weight:700;font-size:12px;line-height:1.45;letter-spacing:.02em}
+.doc h2{text-align:center;font-size:15px;margin:18px 0 14px;letter-spacing:.06em}
+.doc p{text-align:justify;margin:0 0 10px;hyphens:auto}
+.doc .sigs{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:26px 22px;margin-top:38px}
+.doc .sig{border-top:1px solid #111;padding-top:4px;font-size:12px;text-align:center}
+.doc-wrap{display:flex;flex-direction:column;gap:12px}
+
+/* Histórico */
+.filters{display:grid;grid-template-columns:2fr 1fr 1fr;gap:10px}
+@media (max-width:560px){.filters{grid-template-columns:1fr 1fr}.filters label:first-child{grid-column:1/-1}}
+.summary{display:flex;gap:10px;flex-wrap:wrap;font-size:.88rem;color:var(--muted)}
+.summary b{font-family:var(--f-mono);font-weight:500;color:var(--ink);font-variant-numeric:tabular-nums}
+.list{display:flex;flex-direction:column;gap:10px}
+.card{display:grid;grid-template-columns:5px 1fr;background:var(--surface);border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.card .stripe{background:var(--line)}
+.card.leve .stripe{background:var(--leve)} .card.media .stripe{background:var(--media)} .card.grave .stripe{background:var(--grave)}
+.card .body{padding:12px 14px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.card .row1{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:baseline}
+.card .who{font-weight:700;font-size:1rem}
+.card .meta{font-family:var(--f-mono);font-size:.76rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.card .rel{font-size:.9rem;color:var(--muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.pill{display:inline-block;font-size:.72rem;font-weight:600;padding:2px 9px;border-radius:999px;background:var(--surface-2);color:var(--ink);letter-spacing:.02em}
+.pill.st-aberta{background:var(--grave-bg);color:var(--grave)}
+.pill.st-familia{background:var(--media-bg);color:var(--media)}
+.pill.st-encerrada{background:var(--leve-bg);color:var(--leve)}
+.pill.rein{background:var(--grave-bg);color:var(--grave)}
+.tags{display:flex;gap:6px;flex-wrap:wrap}
+.card .acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+
+.empty{border:1px dashed var(--line);border-radius:10px;padding:26px 20px;text-align:center;color:var(--muted);display:flex;flex-direction:column;gap:8px;align-items:center}
+.empty strong{font-family:var(--f-display);font-size:1.15rem;color:var(--ink)}
+
+/* Estudantes */
+table.rank{width:100%;border-collapse:collapse;font-size:.9rem}
+table.rank th{text-align:left;font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:8px 10px;border-bottom:1px solid var(--line)}
+table.rank td{padding:10px;border-bottom:1px solid var(--line);vertical-align:top}
+table.rank td.n{font-family:var(--f-mono);font-variant-numeric:tabular-nums;text-align:right}
+table.rank tr:hover td{background:var(--surface-2)}
+.tscroll{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:10px}
+.linkish{appearance:none;background:none;border:0;padding:0;font:inherit;color:var(--accent);font-weight:600;cursor:pointer;text-align:left}
+
+.confirm{border:1px solid var(--grave);background:var(--grave-bg);border-radius:8px;padding:10px 12px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;font-size:.88rem}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;font-size:.9rem;z-index:20;max-width:calc(100% - 32px)}
+@media (prefers-reduced-motion:no-preference){.toast{animation:up .2s ease-out}@keyframes up{from{transform:translate(-50%,8px);opacity:0}}}
+
+.login{max-width:380px;margin:40px auto;display:flex;flex-direction:column;gap:14px}
+.login h2{font-family:var(--f-display);margin:0;font-size:1.4rem}
+.erro{color:var(--grave);font-size:.9rem;min-height:1.2em}
+.top-user{display:flex;gap:10px;align-items:center;font-size:.82rem}
+.top-user button{appearance:none;background:transparent;border:1px solid currentColor;color:inherit;border-radius:6px;padding:3px 9px;font:inherit;cursor:pointer;opacity:.9}
+.pick{display:flex;flex-direction:column;gap:8px}
+.pick-list{max-height:260px;overflow:auto;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
+.pick-list label{display:flex;gap:10px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--line);cursor:pointer;font-size:.92rem}
+.pick-list label:last-child{border-bottom:0}
+.pick-list input{width:18px;height:18px;accent-color:var(--accent)}
+.selected{display:flex;flex-wrap:wrap;gap:6px}
+.selected .pill button{appearance:none;border:0;background:none;color:inherit;font:inherit;cursor:pointer;padding:0 0 0 6px}
+.carga{position:fixed;inset:0;background:rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center;z-index:30}
+.carga div{background:var(--surface);color:var(--ink);padding:14px 20px;border-radius:10px;font-size:.95rem;box-shadow:0 6px 24px rgba(0,0,0,.2)}
+@media print{
+  @page{size:A4;margin:2cm}
+  body{background:#fff}
+  header.top,body::before,.no-print,#conn,.toast{display:none!important}
+  main .wrap{padding:0;max-width:none}
+  .doc{border:0;padding:0;font-size:12pt}
+}
+
+:root{--accent:#2f4a7a;--focus:#2b7fff}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--accent:#8fa9d8;--accent-ink:#0d1420}}
+:root[data-theme="dark"]{--accent:#8fa9d8;--accent-ink:#0d1420}
+.login{max-width:380px;margin:40px auto;display:flex;flex-direction:column;gap:14px}
+.login h2{font-family:var(--f-display);margin:0;font-size:1.4rem}
+.erro{color:var(--grave);font-size:.9rem;min-height:1.2em}
+.top-user{display:flex;gap:10px;align-items:center;font-size:.82rem;flex-wrap:wrap}
+.top-user button{appearance:none;background:transparent;border:1px solid currentColor;color:inherit;border-radius:6px;padding:3px 9px;font:inherit;cursor:pointer;opacity:.9}
+.carga{position:fixed;inset:0;background:rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center;z-index:30}
+.carga div{background:var(--surface);color:var(--ink);padding:14px 20px;border-radius:10px;font-size:.95rem;box-shadow:0 6px 24px rgba(0,0,0,.2)}
+.est-list{max-height:300px;overflow:auto;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
+.est-list button{appearance:none;display:flex;width:100%;justify-content:space-between;gap:10px;align-items:center;text-align:left;border:0;border-bottom:1px solid var(--line);background:transparent;color:var(--ink);font:inherit;font-size:.92rem;padding:9px 12px;cursor:pointer}
+.est-list button:last-child{border-bottom:0}
+.est-list button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.est-list .badge{font-size:.72rem;font-weight:600;border-radius:999px;padding:2px 8px;background:var(--surface-2);color:var(--muted);white-space:nowrap}
+.est-list .badge.mine{background:var(--leve-bg);color:var(--leve)}
+.est-list button[aria-pressed="true"] .badge{background:rgba(255,255,255,.2);color:inherit}
+.grp{display:flex;flex-direction:column;gap:8px}
+.grp + .grp{border-top:1px dashed var(--line);padding-top:14px}
+.grp .lbl small{text-transform:none;letter-spacing:0;font-weight:500}
+.alvo{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;background:var(--surface-2);border-radius:8px;padding:10px 14px}
+.alvo b{font-family:var(--f-display);font-size:1.05rem}
+.switch{display:flex;gap:10px;align-items:flex-start;cursor:pointer;font-size:.92rem}
+.switch input{width:20px;height:20px;accent-color:var(--accent);margin-top:2px;flex:none}
+.contrib{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 0;border-bottom:1px solid var(--line)}
+.contrib:last-child{border-bottom:0}
+.contrib .meta{font-size:.82rem;color:var(--muted)}
+.prog{display:flex;flex-wrap:wrap;gap:6px}
+.doc[contenteditable="true"]:focus{outline:2px solid var(--focus);outline-offset:4px}
+.doc h3{font-size:13px;margin:18px 0 6px;letter-spacing:.02em}
+.doc p{text-align:justify;margin:0 0 10px}
+.doc .sigs{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:34px 24px;margin-top:40px}
+.doc .sig{border-top:1px solid #111;padding-top:4px;text-align:center;font-size:12px}
+@media print{
+  @page{size:A4;margin:2cm}
+  body{background:#fff}
+  header.top,body::before,.no-print,#conn,.toast{display:none!important}
+  main .wrap{padding:0;max-width:none}
+  .doc{border:0;padding:0;font-size:12pt}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <div class="brand">
+      <h1>Relatórios EMFAL</h1>
+      <div class="top-user" id="topUser"></div>
+    </div>
+    <nav class="tabs" role="tablist" aria-label="Seções" id="tabs" hidden>
+      <button role="tab" id="tab-preencher" aria-selected="true" data-view="preencher">Preencher</button>
+      <button role="tab" id="tab-relatorios" aria-selected="false" data-view="relatorios">Relatórios</button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div id="conn" class="banner" hidden></div>
+
+    <!-- LOGIN -->
+    <section id="view-login" hidden>
+      <form class="login sheet" id="loginForm" novalidate>
+        <h2>Entrar</h2>
+        <p class="hint" style="margin:0">Use o mesmo usuário e senha do Corretor EMFAL.</p>
+        <label class="f"><span>Usuário</span><input type="text" id="lUsu" autocomplete="username" autocapitalize="none"></label>
+        <label class="f"><span>Senha</span><input type="password" id="lSen" autocomplete="current-password"></label>
+        <div class="erro" id="lErro" role="alert"></div>
+        <button type="submit" class="btn primary">Entrar</button>
+      </form>
+    </section>
+
+    <!-- PREENCHER -->
+    <section id="view-preencher" hidden>
+      <form id="form" novalidate>
+        <div class="sheet"><fieldset>
+          <legend>Estudante e período</legend>
+          <div class="grid">
+            <label class="f"><span>Ano letivo</span><select id="f-ano"></select></label>
+            <label class="f"><span>Período</span><select id="f-periodo"></select></label>
+            <label class="f"><span>Componente ou função</span><select id="f-comp"></select></label>
+          </div>
+          <div class="grid">
+            <label class="f"><span>Turma</span><select id="f-turma"></select></label>
+            <label class="f"><span>Filtrar estudante</span><input type="text" id="f-busca" placeholder="Parte do nome" autocomplete="off"></label>
+          </div>
+          <div class="est-list" id="estList"></div>
+          <p class="hint" style="margin:0">A etiqueta ao lado do nome mostra quantos professores já registraram neste período. Verde indica que você já registrou.</p>
+        </fieldset></div>
+
+        <div id="corpo" hidden>
+          <div class="alvo" id="alvo"></div>
+          <div id="secoes"></div>
+
+          <div class="sheet"><fieldset>
+            <legend>Consideração do professor</legend>
+            <label class="f"><span>Escreva com suas palavras (opcional)</span>
+              <textarea id="f-consid" placeholder="Ex.: Ele melhorou muito depois que passou a sentar na frente e a usar o caderno quadriculado."></textarea></label>
+            <p class="hint" style="margin:0">O app encaixa este texto nas considerações finais do relatório, indicando o seu componente.</p>
+            <label class="f"><span>Seu nome no relatório</span><input type="text" id="f-prof"></label>
+          </fieldset></div>
+
+          <div class="actions">
+            <button type="submit" class="btn primary" id="btn-salvar">Salvar minha parte</button>
+            <button type="button" class="btn" id="btn-ver">Ver relatório do estudante</button>
+            <button type="button" class="btn danger" id="btn-apagar" hidden>Apagar minha parte</button>
+            <span class="status-msg" id="form-msg" role="status"></span>
+          </div>
+        </div>
+      </form>
+    </section>
+
+    <!-- RELATÓRIOS -->
+    <section id="view-relatorios" hidden>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div class="sheet"><fieldset>
+          <legend>Escolha o estudante</legend>
+          <div class="grid">
+            <label class="f"><span>Ano letivo</span><select id="r-ano"></select></label>
+            <label class="f"><span>Período</span><select id="r-periodo"></select></label>
+            <label class="f"><span>Turma</span><select id="r-turma"></select></label>
+          </div>
+          <div class="summary" id="r-summary"></div>
+          <div class="est-list" id="rList"></div>
+        </fieldset></div>
+        <div class="sheet" id="r-det" hidden></div>
+      </div>
+    </section>
+
+    <!-- DOCUMENTO -->
+    <section id="view-doc" hidden>
+      <div class="doc-wrap" style="display:flex;flex-direction:column;gap:12px">
+        <div class="sheet no-print" style="display:flex;flex-direction:column;gap:12px">
+          <div class="grid">
+            <label class="f"><span>Como tratar no texto</span>
+              <select id="d-gen"><option value="o">o estudante</option><option value="a">a estudante</option></select></label>
+            <label class="f"><span>Data do relatório</span><input type="date" id="d-data"></label>
+          </div>
+          <p class="hint" style="margin:0">Você pode corrigir o texto direto na folha abaixo antes de imprimir ou baixar. Mudar as opções acima refaz o texto.</p>
+          <div class="actions">
+            <button class="btn" id="btn-voltar" type="button">Voltar</button>
+            <button class="btn primary" id="btn-imprimir" type="button">Imprimir</button>
+            <button class="btn" id="btn-baixar" type="button">Baixar para Word</button>
+            <button class="btn" id="btn-copiar" type="button">Copiar texto</button>
+          </div>
+        </div>
+        <div class="doc" id="doc" contenteditable="true" spellcheck="true"></div>
+      </div>
+    </section>
+  </div>
+</main>
+<div class="carga" id="carga" hidden><div id="cargaMsg">Carregando…</div></div>
+
+<script>
+'use strict';
+var API_URL = 'https://script.google.com/macros/s/AKfycbyydNXf359Ht_iY7sAZY1oEONY5Qj9NYPIVmG6mzXav2TF5NBHjw7rjgUMmlDTa_RaUTg/exec';
+var SEM_TOKEN = ['entrar', 'sair', 'situacao'];
+var CHAVE = 'relatorios_sessao';
+var MESES = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+var HEADER = ['PREFEITURA MUNICIPAL DE BELO HORIZONTE','SECRETARIA MUNICIPAL DE EDUCAÇÃO (SMED-BH)','GERÊNCIA REGIONAL DE EDUCAÇÃO DA PAMPULHA (GERED-PAMPULHA)','ESCOLA MUNICIPAL FRANCISCA ALVES (EMFAL)'];
+var PERIODOS = ['1º trimestre', '2º trimestre', '3º trimestre', 'Anual'];
+var PERIODO_TXT = { '1º trimestre': 'ao 1º trimestre', '2º trimestre': 'ao 2º trimestre', '3º trimestre': 'ao 3º trimestre', 'Anual': 'ao ano letivo' };
+
+// Componentes e funções. "em" é como o nome entra numa frase ("Em Matemática", "na regência da turma").
+var COMPS = [
+  { n: 'Língua Portuguesa', em: 'em Língua Portuguesa' }, { n: 'Matemática', em: 'em Matemática' },
+  { n: 'Ciências', em: 'em Ciências' }, { n: 'História', em: 'em História' }, { n: 'Geografia', em: 'em Geografia' },
+  { n: 'Arte', em: 'em Arte' }, { n: 'Educação Física', em: 'em Educação Física' }, { n: 'Língua Inglesa', em: 'em Língua Inglesa' },
+  { n: 'Regência (anos iniciais)', em: 'na regência da turma', esp: 1 },
+  { n: 'AEE', em: 'no Atendimento Educacional Especializado', esp: 1 },
+  { n: 'Apoio à inclusão', em: 'no apoio à inclusão escolar', esp: 1 },
+  { n: 'Coordenação pedagógica', em: 'no acompanhamento da coordenação pedagógica', esp: 1 }
+];
+var COMPPOR = {}; COMPS.forEach(function (c, i) { c.i = i; COMPPOR[c.n] = c; });
+
+/* Itens que o professor marca. Cada opção tem o rótulo da tela e o trecho que entra no texto.
+   Marcas de concordância: {o} vira o/a, {O} vira O/A, {do} vira do/da, {ao} vira ao/à. */
+var SECOES = [
+  { id: 'des', titulo: 'Desenvolvimento e aprendizagem', grupos: [
+    { k: 'nivel', tipo: 'um', rot: 'Aprendizagem no período', ops: [
+      ['Consolidou as habilidades', 'consolidou as habilidades previstas para o período'],
+      ['Em consolidação', 'está em processo de consolidação das habilidades previstas'],
+      ['Consolidou parcialmente', 'consolidou parcialmente as habilidades previstas, necessitando de retomada'],
+      ['Ainda não consolidou', 'ainda não consolidou as habilidades previstas para o período']] },
+    { k: 'part', tipo: 'um', rot: 'Participação', ops: [
+      ['Participa ativamente', 'participa ativamente das aulas e das atividades propostas'],
+      ['Participa quando estimulado', 'participa das aulas quando estimulad{o}'],
+      ['Participa pouco', 'apresenta participação reduzida nas aulas']] },
+    { k: 'auto', tipo: 'um', rot: 'Autonomia', ops: [
+      ['Realiza com autonomia', 'realiza as atividades com autonomia'],
+      ['Mediação eventual', 'necessita de mediação eventual para realizar as atividades'],
+      ['Mediação constante', 'necessita de mediação constante para realizar as atividades']] },
+    { k: 'conv', tipo: 'um', rot: 'Convivência', ops: [
+      ['Boa convivência', 'relaciona-se bem com colegas e professores'],
+      ['Conflitos ocasionais', 'apresenta conflitos ocasionais na convivência com os colegas'],
+      ['Conflitos frequentes', 'apresenta dificuldades frequentes de convivência, que demandam acompanhamento']] }
+  ] },
+  { id: 'bar', titulo: 'Barreiras à aprendizagem e à participação', grupos: [
+    { k: 'barreiras', tipo: 'varios', rot: 'Barreiras observadas', nenhum: 'Nenhuma barreira significativa', ops: [
+      ['Atenção e concentração', 'a dificuldade de atenção e concentração'],
+      ['Defasagem em leitura e escrita', 'a defasagem em leitura e escrita'],
+      ['Defasagem em matemática básica', 'a defasagem em conhecimentos matemáticos básicos'],
+      ['Compreensão de enunciados', 'a dificuldade de compreensão de enunciados e comandos'],
+      ['Ritmo mais lento', 'o ritmo de aprendizagem mais lento que o da turma'],
+      ['Organização e prazos', 'a dificuldade de organização e de cumprimento de prazos'],
+      ['Faltas recorrentes', 'a infrequência'],
+      ['Baixa motivação', 'a baixa motivação e o pouco engajamento nas atividades'],
+      ['Comunicação e interação', 'as dificuldades de comunicação e interação'],
+      ['Comportamento', 'questões de comportamento que interferem na aprendizagem'],
+      ['Barreiras sensoriais ou motoras', 'barreiras sensoriais ou motoras'],
+      ['Pouco acompanhamento familiar', 'o pouco acompanhamento familiar das atividades escolares']] }
+  ] },
+  { id: 'inc', titulo: 'Inclusão e acessibilidade', grupos: [
+    { k: 'adapt', tipo: 'varios', rot: 'Adaptações e flexibilizações curriculares', ops: [
+      ['Habilidades essenciais', 'a priorização de habilidades essenciais'],
+      ['Conteúdo simplificado', 'a redução e a simplificação de conteúdos'],
+      ['Mais tempo', 'a ampliação do tempo para realização das atividades'],
+      ['Material concreto e visual', 'o uso de material concreto e de recursos visuais'],
+      ['Atividades adaptadas', 'atividades adaptadas ao nível de aprendizagem d{o} estudante'],
+      ['Tarefas em etapas', 'o fracionamento das tarefas em etapas menores']] },
+    { k: 'recursos', tipo: 'varios', ee: 1, rot: 'Recursos de acessibilidade', ops: [
+      ['Material ampliado', 'material ampliado'],
+      ['Comunicação alternativa', 'pranchas de comunicação alternativa'],
+      ['Tecnologia assistiva', 'recursos de tecnologia assistiva'],
+      ['Ledor e escriba', 'apoio de ledor e escriba'],
+      ['Tablet ou computador', 'tablet ou computador'],
+      ['Lugar estratégico na sala', 'posicionamento estratégico na sala de aula'],
+      ['Material tátil ou Braille', 'materiais táteis ou em Braille'],
+      ['Intérprete de Libras', 'intérprete de Libras']] },
+    { k: 'aee', tipo: 'um', ee: 1, rot: 'Atendimento Educacional Especializado (AEE)', ops: [
+      ['Frequenta o AEE', 'frequenta o Atendimento Educacional Especializado (AEE) na sala de recursos multifuncionais'],
+      ['Encaminhado, aguardando', 'foi encaminhad{o} ao Atendimento Educacional Especializado (AEE) e aguarda atendimento'],
+      ['Não frequenta', 'não frequenta o Atendimento Educacional Especializado (AEE)']] },
+    { k: 'prof', tipo: 'varios', ee: 1, rot: 'Profissionais envolvidos', ops: [
+      ['Professor do AEE', 'do profissional do Atendimento Educacional Especializado'],
+      ['Apoio à inclusão', 'do profissional de apoio à inclusão escolar'],
+      ['Intérprete de Libras', 'do intérprete de Libras'],
+      ['Coordenação pedagógica', 'da coordenação pedagógica'],
+      ['Saúde (acompanhamento externo)', 'dos profissionais de saúde que acompanham {o} estudante'],
+      ['Rede de proteção', 'da rede de proteção'],
+      ['Família', 'da família']] }
+  ] },
+  { id: 'int', titulo: 'Intervenções pedagógicas e resultados', grupos: [
+    { k: 'estr', tipo: 'varios', rot: 'Estratégias utilizadas', ops: [
+      ['Atendimento individual', 'o atendimento individualizado em sala'],
+      ['Duplas ou pequenos grupos', 'o trabalho em duplas ou pequenos grupos'],
+      ['Nova explicação', 'a retomada das explicações com novos exemplos'],
+      ['Jogos e atividades lúdicas', 'o uso de jogos e atividades lúdicas'],
+      ['Recursos audiovisuais', 'o uso de recursos audiovisuais e tecnológicos'],
+      ['Acompanhar caderno e tarefas', 'o acompanhamento mais próximo do caderno e das tarefas'],
+      ['Tutoria entre colegas', 'a tutoria entre colegas'],
+      ['Rotina e combinados', 'o estabelecimento de rotina e de combinados claros']] },
+    { k: 'dif', tipo: 'varios', rot: 'Atividades diferenciadas', ops: [
+      ['Níveis de complexidade', 'atividades em diferentes níveis de complexidade'],
+      ['Exercícios de reforço', 'listas de exercícios de reforço'],
+      ['Atividades para casa', 'atividades complementares para casa'],
+      ['Desafios de ampliação', 'desafios e projetos para ampliar os conhecimentos']] },
+    { k: 'rec', tipo: 'varios', rot: 'Recuperação e retomada de conteúdos', nenhum: 'Não precisou de recuperação', ops: [
+      ['Recuperação paralela', 'participou da recuperação paralela'],
+      ['PIP', 'participou do PIP (intervenção pedagógica)'],
+      ['Retomada em sala', 'realizou atividades de retomada de conteúdos em sala'],
+      ['Recuperação trimestral', 'realizou a recuperação trimestral']] },
+    { k: 'aval', tipo: 'varios', rot: 'Adaptações nas avaliações', nenhum: 'Sem adaptações', ops: [
+      ['Enunciados simplificados', 'a simplificação dos enunciados'],
+      ['Tempo ampliado', 'o tempo ampliado'],
+      ['Leitura das questões', 'a leitura das questões por um adulto'],
+      ['Espaço separado', 'a aplicação em espaço separado'],
+      ['Avaliação oral', 'a avaliação oral'],
+      ['Menos questões', 'a redução do número de questões'],
+      ['Fonte ampliada', 'a fonte ampliada'],
+      ['Avaliação processual', 'a avaliação processual por meio de observação e registros']] },
+    { k: 'resp', tipo: 'um', rot: 'Resposta às intervenções', ops: [
+      ['Respondeu bem, com avanços', 'respondeu positivamente às intervenções, com avanços perceptíveis'],
+      ['Respondeu parcialmente', 'respondeu parcialmente às intervenções, com avanços ainda discretos'],
+      ['Ainda não respondeu', 'ainda não apresentou resposta significativa às intervenções realizadas']] }
+  ] },
+  { id: 'fin', titulo: 'Considerações finais e encaminhamentos', grupos: [
+    { k: 'pot', tipo: 'varios', rot: 'Potencialidades e interesses', ops: [
+      ['Oralidade', 'a oralidade e a expressão de ideias'],
+      ['Artes', 'o interesse por atividades artísticas'],
+      ['Esportes e movimento', 'o interesse por atividades esportivas e corporais'],
+      ['Raciocínio lógico', 'o raciocínio lógico'],
+      ['Criatividade', 'a criatividade'],
+      ['Tecnologia', 'a facilidade com tecnologias'],
+      ['Leitura', 'o gosto pela leitura'],
+      ['Colaboração', 'a colaboração com os colegas'],
+      ['Curiosidade científica', 'a curiosidade e o interesse por temas científicos'],
+      ['Responsabilidade', 'a responsabilidade e o cuidado com os materiais']] },
+    { k: 'av', tipo: 'varios', rot: 'Principais avanços', ops: [
+      ['Leitura e escrita', 'na leitura e na escrita'], ['Matemática', 'no raciocínio matemático'],
+      ['Participação', 'na participação nas aulas'], ['Autonomia', 'na autonomia'],
+      ['Organização', 'na organização e no cumprimento das tarefas'], ['Convivência', 'na convivência e no comportamento'],
+      ['Frequência', 'na frequência'], ['Conteúdos do componente', 'na compreensão dos conteúdos do componente']] },
+    { k: 'dp', tipo: 'varios', rot: 'Dificuldades que permanecem', ops: [
+      ['Leitura e escrita', 'na leitura e na escrita'], ['Matemática', 'no raciocínio matemático'],
+      ['Atenção', 'na atenção e na concentração'], ['Resolução de problemas', 'na resolução de problemas'],
+      ['Autonomia', 'na autonomia'], ['Organização', 'na organização e no cumprimento das tarefas'],
+      ['Convivência', 'na convivência e no comportamento'], ['Frequência', 'na frequência']] },
+    { k: 'recom', tipo: 'varios', rot: 'Continuidade e recomendações para o próximo período', ops: [
+      ['Continuar intervenções', 'a continuidade das intervenções pedagógicas'],
+      ['Manter adaptações', 'a manutenção das adaptações curriculares'],
+      ['Continuar no PIP', 'a continuidade da participação no PIP'],
+      ['Continuar no AEE', 'a continuidade do Atendimento Educacional Especializado'],
+      ['Manter apoio à inclusão', 'a manutenção do profissional de apoio à inclusão'],
+      ['Avaliação de saúde', 'o encaminhamento para avaliação de profissionais de saúde'],
+      ['Acompanhamento da coordenação', 'o acompanhamento pela coordenação pedagógica'],
+      ['Retomar habilidades', 'a retomada das habilidades não consolidadas no início do próximo período']] },
+    { k: 'fam', tipo: 'varios', rot: 'Orientações à família', ops: [
+      ['Acompanhar tarefas', 'acompanhar diariamente as tarefas e o material escolar'],
+      ['Garantir frequência', 'garantir a frequência e a pontualidade'],
+      ['Rotina de estudos', 'estabelecer uma rotina de estudos em casa'],
+      ['Incentivar a leitura', 'incentivar a leitura em casa'],
+      ['Contato com a escola', 'manter contato regular com a escola'],
+      ['Acompanhamento de saúde', 'dar continuidade aos acompanhamentos de saúde'],
+      ['Comparecer às reuniões', 'comparecer às reuniões e aos atendimentos agendados']] }
+  ] }
+];
+var GRUPOS = {}; SECOES.forEach(function (s) { s.grupos.forEach(function (g) { GRUPOS[g.k] = g; }); });
+
+function $(s) { return document.querySelector(s); }
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function norm(s) { return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim(); }
+function todayISO() { var d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 10); }
+function fmtLong(iso) { if (!iso) return ''; var p = iso.split('-').map(Number); return p[2] + ' de ' + MESES[p[1] - 1] + ' de ' + p[0]; }
+function fmtCurto(iso) { if (!iso) return ''; var d = new Date(iso); return isNaN(d) ? '' : d.toLocaleDateString('pt-BR'); }
+function joinPt(a) { return a.length <= 1 ? a.join('') : a.slice(0, -1).join(', ') + ' e ' + a[a.length - 1]; }
+function cap(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
+function cleanDash(s) { return String(s || '').replace(/\s*[–—]\s*/g, ', ').replace(/[ \t]+/g, ' ').trim(); }
+function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+function lsSet(k, v) { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) {} }
+function toast(m) { var t = document.createElement('div'); t.className = 'toast'; t.setAttribute('role', 'status'); t.textContent = m; document.body.appendChild(t); setTimeout(function () { t.remove(); }, 2800); }
+function carga(on, msg) { $('#carga').hidden = !on; if (msg) $('#cargaMsg').textContent = msg; }
+
+var PART = { da: 1, de: 1, di: 1, do: 1, das: 1, dos: 1, e: 1 };
+function nomeBonito(n) {
+  return String(n || '').toLowerCase().split(/\s+/).filter(Boolean).map(function (w, i) {
+    return i > 0 && PART[w] ? w : w.charAt(0).toUpperCase() + w.slice(1);
+  }).join(' ');
+}
+function turmaNome(t) {
+  var m = /^FRC(IA|PA|AA)(\d)([MT])([A-Z])$/.exec(String(t || '').toUpperCase());
+  if (!m) return String(t || '');
+  var ano = { IA: 0, PA: 3, AA: 6 }[m[1]] + Number(m[2]);
+  return ano + 'º ' + m[4];
+}
+function turmaRotulo(t) { var n = turmaNome(t); return n && n !== t ? n + ' (' + t + ')' : t; }
+
+// ---------- servidor ----------
+var SESS = null;
+try { SESS = JSON.parse(lsGet(CHAVE) || 'null'); } catch (e) { SESS = null; }
+function api(fn) {
+  var args = Array.prototype.slice.call(arguments, 1);
+  if (SEM_TOKEN.indexOf(fn) < 0) args.unshift(SESS ? SESS.token : '');
+  return fetch(API_URL, { method: 'POST', body: JSON.stringify({ fn: fn, args: args }), headers: { 'Content-Type': 'text/plain;charset=utf-8' }, credentials: 'omit', redirect: 'follow' })
+    .catch(function () { throw new Error('Sem conexão com a internet. Confira e tente de novo.'); })
+    .then(function (r) { if (!r.ok) throw new Error('O servidor não respondeu (erro ' + r.status + '). Tente de novo.'); return r.json(); })
+    .then(function (j) {
+      if (j && j.ok) return j.res;
+      var m = String((j && j.erro) || 'Erro desconhecido.').replace(/^Error: /, '');
+      if (/^SESSAO:/.test(m)) { sairLocal(); m = m.replace(/^SESSAO: ?/, ''); }
+      m = m.replace(/^TROCAR: ?/, '');
+      throw new Error(m);
+    });
+}
+function chamar(msg) {
+  var args = Array.prototype.slice.call(arguments, 1);
+  carga(true, msg);
+  return api.apply(null, args).then(function (r) { carga(false); return r; }, function (e) { carga(false); throw e; });
+}
+
+// ---------- estado ----------
+var ESTUD = [], ESTPOR = {}, TURMAS = [], INDICE = [];
+var view = 'preencher';
+var atual = null;      // estudante escolhido no Preencher
+var meu = null;        // minha contribuição carregada (para editar)
+var docCtx = null;     // { est, ano, periodo, contribs, voltar }
+
+function ehCoord() { return SESS && SESS.eu && SESS.eu.perfil === 'coordenacao'; }
+
+function setDados(d) {
+  if (d.estudantes) {
+    ESTUD = d.estudantes.slice().sort(function (a, b) { return a.nome.localeCompare(b.nome, 'pt-BR'); });
+    ESTPOR = {}; var t = {};
+    ESTUD.forEach(function (e) { ESTPOR[e.id] = e; t[e.turma] = 1; });
+    TURMAS = Object.keys(t).sort(function (a, b) { return turmaNome(a).localeCompare(turmaNome(b), 'pt-BR', { numeric: true }); });
+    var opts = '<option value="">Escolha a turma</option>' + TURMAS.map(function (x) { return '<option value="' + esc(x) + '">' + esc(turmaRotulo(x)) + '</option>'; }).join('');
+    var a = $('#f-turma').value, b = $('#r-turma').value;
+    $('#f-turma').innerHTML = opts; $('#r-turma').innerHTML = opts;
+    if (TURMAS.indexOf(a) >= 0) $('#f-turma').value = a;
+    if (TURMAS.indexOf(b) >= 0) $('#r-turma').value = b;
+  }
+  if (d.indice) INDICE = d.indice;
+}
+
+function contribsDe(estId, ano, per) {
+  return INDICE.filter(function (c) { return c.estudanteId === estId && c.anoLetivo === ano && c.periodo === per; });
+}
+
+// ---------- selects fixos ----------
+(function () {
+  var y = new Date().getFullYear(), anos = [y - 1, y, y + 1].map(String);
+  var anoOpts = anos.map(function (a) { return '<option' + (a === String(y) ? ' selected' : '') + '>' + a + '</option>'; }).join('');
+  $('#f-ano').innerHTML = anoOpts; $('#r-ano').innerHTML = anoOpts;
+  var m = new Date().getMonth(), perPad = m < 4 ? PERIODOS[0] : m < 8 ? PERIODOS[1] : PERIODOS[2];
+  var pOpts = PERIODOS.map(function (p) { return '<option' + (p === perPad ? ' selected' : '') + '>' + p + '</option>'; }).join('');
+  $('#f-periodo').innerHTML = pOpts; $('#r-periodo').innerHTML = pOpts;
+  $('#f-comp').innerHTML = '<option value="">Escolha</option>' + COMPS.map(function (c) { return '<option>' + esc(c.n) + '</option>'; }).join('');
+  var lc = lsGet('relatorios_comp'); if (lc && COMPPOR[lc]) $('#f-comp').value = lc;
+})();
+
+// ---------- formulário de marcações ----------
+function montarSecoes() {
+  $('#secoes').innerHTML = '<div class="sheet"><fieldset><legend>Perfil</legend>' +
+    '<label class="switch"><input type="checkbox" id="f-ee"><span>Estudante com deficiência, transtorno ou outra necessidade específica (público da Educação Especial). Ao marcar, aparecem os campos de recursos de acessibilidade, AEE e profissionais envolvidos.</span></label>' +
+    '</fieldset></div>' +
+    SECOES.map(function (s) {
+      return '<div class="sheet"><fieldset><legend>' + esc(s.titulo) + '</legend>' + s.grupos.map(function (g) {
+        var tipo = g.tipo === 'um' ? 'radio' : 'checkbox';
+        var ops = g.ops.map(function (o, i) {
+          return '<label class="chip"><input type="' + tipo + '" name="g-' + g.k + '" value="' + i + '"><span>' + esc(o[0]) + '</span></label>';
+        }).join('');
+        if (g.nenhum) ops += '<label class="chip"><input type="checkbox" name="g-' + g.k + '" value="n"><span>' + esc(g.nenhum) + '</span></label>';
+        var dica = g.tipo === 'um' ? 'escolha uma' : 'marque quantas quiser';
+        return '<div class="grp"' + (g.ee ? ' data-ee="1"' : '') + '><div class="lbl">' + esc(g.rot) + ' <small>(' + dica + ')</small></div><div class="chips">' + ops + '</div></div>';
+      }).join('') + '</fieldset></div>';
+    }).join('');
+  $('#f-ee').addEventListener('change', aplicarEE);
+  // "um": tocar de novo desmarca; "nenhum" é exclusivo
+  $('#secoes').addEventListener('click', function (e) {
+    var inp = e.target.closest('label.chip') && e.target.closest('label.chip').querySelector('input');
+    if (!inp || inp.type !== 'radio') return;
+    if (inp.dataset.on === '1') { e.preventDefault(); inp.checked = false; inp.dataset.on = ''; }
+    else { [].forEach.call(document.getElementsByName(inp.name), function (x) { x.dataset.on = ''; }); setTimeout(function () { inp.dataset.on = inp.checked ? '1' : ''; }, 0); }
+  });
+  $('#secoes').addEventListener('change', function (e) {
+    var inp = e.target; if (inp.type !== 'checkbox' || !inp.name || !inp.checked) return;
+    var irmaos = document.getElementsByName(inp.name);
+    if (inp.value === 'n') [].forEach.call(irmaos, function (x) { if (x !== inp) x.checked = false; });
+    else [].forEach.call(irmaos, function (x) { if (x.value === 'n') x.checked = false; });
+  });
+}
+function aplicarEE() {
+  var on = $('#f-ee').checked;
+  [].forEach.call(document.querySelectorAll('#secoes [data-ee]'), function (g) { g.hidden = !on; });
+}
+function lerDados() {
+  var d = { ee: $('#f-ee').checked };
+  Object.keys(GRUPOS).forEach(function (k) {
+    var g = GRUPOS[k];
+    if (g.ee && !d.ee) return;
+    var v = [].filter.call(document.getElementsByName('g-' + k), function (x) { return x.checked; }).map(function (x) { return x.value === 'n' ? 'n' : Number(x.value); });
+    if (v.length) d[k] = g.tipo === 'um' ? v[0] : v;
+  });
+  return d;
+}
+function preencherDados(d) {
+  d = d || {};
+  $('#f-ee').checked = !!d.ee;
+  Object.keys(GRUPOS).forEach(function (k) {
+    var v = d[k], set = {};
+    [].concat(v == null ? [] : v).forEach(function (x) { set[String(x)] = 1; });
+    [].forEach.call(document.getElementsByName('g-' + k), function (x) { x.checked = !!set[x.value]; x.dataset.on = x.checked ? '1' : ''; });
+  });
+  aplicarEE();
+}
+
+function filtroAtual() { return { ano: $('#f-ano').value, per: $('#f-periodo').value, comp: $('#f-comp').value }; }
+
+function renderEstList() {
+  var t = $('#f-turma').value, q = norm($('#f-busca').value), f = filtroAtual();
+  if (!t) { $('#estList').innerHTML = '<button type="button" disabled style="color:var(--muted)">Escolha a turma para ver a lista.</button>'; return; }
+  var lista = ESTUD.filter(function (e) { return e.turma === t && (!q || norm(e.nome).indexOf(q) >= 0); });
+  $('#estList').innerHTML = lista.length ? lista.map(function (e) {
+    var cs = contribsDe(e.id, f.ano, f.per), mine = cs.some(function (c) { return c.usuario === SESS.eu.usuario && c.componente === f.comp; });
+    var badge = cs.length ? '<span class="badge' + (mine ? ' mine' : '') + '">' + cs.length + (cs.length === 1 ? ' registro' : ' registros') + '</span>' : '';
+    return '<button type="button" data-est="' + esc(e.id) + '" aria-pressed="' + (atual && atual.id === e.id) + '"><span>' + esc(nomeBonito(e.nome)) + '</span>' + badge + '</button>';
+  }).join('') : '<button type="button" disabled style="color:var(--muted)">Nenhum estudante encontrado.</button>';
+}
+
+function abrirEstudante() {
+  var f = filtroAtual();
+  if (!atual) { $('#corpo').hidden = true; return; }
+  if (!f.comp) { $('#corpo').hidden = true; $('#form-msg').textContent = ''; toast('Escolha o componente ou a função antes.'); $('#f-comp').focus(); return; }
+  lsSet('relatorios_comp', f.comp);
+  var cs = contribsDe(atual.id, f.ano, f.per);
+  var minha = cs.filter(function (c) { return c.usuario === SESS.eu.usuario && c.componente === f.comp; })[0];
+  var outros = cs.filter(function (c) { return c !== minha; });
+  $('#alvo').innerHTML = '<div><b>' + esc(nomeBonito(atual.nome)) + '</b><div class="hint">' + esc(turmaNome(atual.turma)) + ' · ' + esc(f.per) + ' de ' + esc(f.ano) + ' · ' + esc(f.comp) + '</div></div>' +
+    '<div class="prog">' + (outros.length ? outros.map(function (c) { return '<span class="pill">' + esc(c.componente) + '</span>'; }).join('') : '<span class="hint">Nenhum outro professor registrou ainda.</span>') + '</div>';
+  $('#corpo').hidden = false; $('#form-msg').textContent = '';
+  $('#f-prof').value = SESS.eu.nome || '';
+  if (!minha) { meu = null; preencherDados({ ee: outrosEE(atual.id, f) }); $('#f-consid').value = ''; $('#btn-apagar').hidden = true; $('#btn-salvar').textContent = 'Salvar minha parte'; return; }
+  chamar('Abrindo seu registro…', 'contribuicoes', atual.id, f.ano, f.per).then(function (lista) {
+    meu = lista.filter(function (c) { return c.id === minha.id; })[0] || null;
+    preencherDados(meu ? meu.dados : {}); $('#f-consid').value = meu ? meu.consideracao : '';
+    if (meu && meu.professor) $('#f-prof').value = meu.professor;
+    $('#btn-apagar').hidden = !meu; $('#btn-salvar').textContent = meu ? 'Salvar alterações' : 'Salvar minha parte';
+  }).catch(function (err) { toast(err.message); });
+}
+var EECACHE = {};
+function outrosEE(id, f) { return !!EECACHE[id + '|' + f.ano + '|' + f.per]; }
+
+$('#f-turma').addEventListener('change', function () { $('#f-busca').value = ''; atual = null; $('#corpo').hidden = true; renderEstList(); });
+$('#f-busca').addEventListener('input', renderEstList);
+['#f-ano', '#f-periodo', '#f-comp'].forEach(function (s) { $(s).addEventListener('change', function () { renderEstList(); if (atual) abrirEstudante(); }); });
+$('#estList').addEventListener('click', function (e) {
+  var b = e.target.closest('button[data-est]'); if (!b) return;
+  atual = ESTPOR[b.dataset.est]; renderEstList(); abrirEstudante();
+  setTimeout(function () { if (!$('#corpo').hidden) $('#alvo').scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 50);
+});
+
+$('#form').addEventListener('submit', function (e) {
+  e.preventDefault();
+  if (!atual) return;
+  var f = filtroAtual(), dados = lerDados();
+  var tem = Object.keys(dados).some(function (k) { return k !== 'ee'; }) || $('#f-consid').value.trim();
+  if (!tem) { $('#form-msg').textContent = 'Marque pelo menos uma opção ou escreva sua consideração.'; return; }
+  var c = { id: meu ? meu.id : '', anoLetivo: f.ano, periodo: f.per, turma: atual.turma, estudanteId: atual.id, estudante: atual.nome,
+    componente: f.comp, professor: $('#f-prof').value.trim(), dados: dados, consideracao: $('#f-consid').value.trim() };
+  chamar('Salvando…', 'salvarContribuicao', c).then(function (res) {
+    setDados(res); meu = res.salvo; if (dados.ee) EECACHE[atual.id + '|' + f.ano + '|' + f.per] = 1;
+    toast('Sua parte foi salva'); $('#btn-apagar').hidden = false; $('#btn-salvar').textContent = 'Salvar alterações';
+    $('#form-msg').textContent = 'Salvo. Você pode abrir o relatório do estudante ou escolher outro nome na lista.';
+    renderEstList();
+  }).catch(function (err) { $('#form-msg').textContent = err.message; if (!SESS) show('login'); });
+});
+$('#btn-apagar').addEventListener('click', function () {
+  if (!meu) return;
+  var bt = $('#btn-apagar');
+  if (bt.dataset.conf !== '1') { bt.dataset.conf = '1'; bt.textContent = 'Toque de novo para apagar'; setTimeout(function () { bt.dataset.conf = ''; bt.textContent = 'Apagar minha parte'; }, 4000); return; }
+  bt.dataset.conf = ''; bt.textContent = 'Apagar minha parte';
+  chamar('Apagando…', 'excluirContribuicao', meu.id).then(function (res) {
+    setDados(res); meu = null; toast('Registro apagado'); renderEstList(); abrirEstudante();
+  }).catch(function (err) { toast(err.message); });
+});
+$('#btn-ver').addEventListener('click', function () { if (atual) abrirRelatorio(atual, $('#f-ano').value, $('#f-periodo').value, 'preencher'); });
+
+// ---------- aba Relatórios ----------
+function renderRList() {
+  var t = $('#r-turma').value, ano = $('#r-ano').value, per = $('#r-periodo').value;
+  $('#r-det').hidden = true;
+  if (!t) { $('#rList').innerHTML = '<button type="button" disabled style="color:var(--muted)">Escolha a turma.</button>'; $('#r-summary').innerHTML = ''; return; }
+  var lista = ESTUD.filter(function (e) { return e.turma === t; }), com = 0;
+  $('#rList').innerHTML = lista.map(function (e) {
+    var cs = contribsDe(e.id, ano, per); if (cs.length) com++;
+    var comps = cs.map(function (c) { return c.componente; });
+    return '<button type="button" data-rest="' + esc(e.id) + '"><span>' + esc(nomeBonito(e.nome)) + '</span><span class="badge' + (cs.length ? ' mine' : '') + '">' +
+      (cs.length ? esc(cs.length + ' · ' + comps.slice(0, 3).join(', ') + (comps.length > 3 ? '…' : '')) : 'sem registros') + '</span></button>';
+  }).join('');
+  $('#r-summary').innerHTML = '<span><b>' + lista.length + '</b> estudantes</span><span><b>' + com + '</b> com registros em ' + esc(per) + '</span>';
+}
+['#r-turma', '#r-ano', '#r-periodo'].forEach(function (s) { $(s).addEventListener('change', renderRList); });
+$('#rList').addEventListener('click', function (e) {
+  var b = e.target.closest('button[data-rest]'); if (!b) return;
+  var est = ESTPOR[b.dataset.rest], ano = $('#r-ano').value, per = $('#r-periodo').value;
+  var cs = contribsDe(est.id, ano, per);
+  if (!cs.length) { $('#r-det').hidden = false; $('#r-det').innerHTML = '<p style="margin:0"><b>' + esc(nomeBonito(est.nome)) + '</b> ainda não tem registros em ' + esc(per) + ' de ' + esc(ano) + '.</p>'; return; }
+  abrirRelatorio(est, ano, per, 'relatorios');
+});
+
+// ---------- montagem do texto ----------
+var G = { o: 'o', O: 'O', do: 'do', ao: 'ao' };
+function concord(s) { return s.replace(/\{(o|O|do|ao)\}/g, function (_, k) { return G[k]; }); }
+function frase(k, i) { var g = GRUPOS[k]; return i === 'n' ? '' : concord(g.ops[i][1]); }
+
+function prefixo(comps) { // "Em Matemática e Ciências" ou "Em Arte e na regência da turma"
+  var cs = comps.map(function (n) { return COMPPOR[n] || { n: n, em: 'em ' + n }; }).sort(function (a, b) { return (a.i || 99) - (b.i || 99); });
+  if (cs.every(function (c) { return !c.esp; })) return 'Em ' + joinPt(cs.map(function (c) { return c.n; }));
+  return cap(joinPt(cs.map(function (c) { return c.em; })));
+}
+// Agrupa componentes que marcaram exatamente o mesmo conjunto de opções num grupo
+function agrupar(contribs, k) {
+  var m = {}, ordem = [];
+  contribs.forEach(function (c) {
+    var v = c.dados[k]; if (v == null || (Array.isArray(v) && !v.length)) return;
+    var chave = JSON.stringify([].concat(v).sort());
+    if (!m[chave]) { m[chave] = { v: [].concat(v), comps: [] }; ordem.push(chave); }
+    m[chave].comps.push(c.componente);
+  });
+  return ordem.map(function (ch) { return m[ch]; });
+}
+// Junta por item: itens marcados pelos mesmos componentes viram uma frase só
+function porItem(contribs, k) {
+  var m = {}, nenhum = [];
+  contribs.forEach(function (c) {
+    var v = [].concat(c.dados[k] == null ? [] : c.dados[k]);
+    if (v.length === 1 && v[0] === 'n') { nenhum.push(c.componente); return; }
+    v.forEach(function (i) { if (i === 'n') return; (m[i] = m[i] || []).push(c.componente); });
+  });
+  var g = {}, ordem = [];
+  Object.keys(m).map(Number).sort(function (a, b) { return a - b; }).forEach(function (i) {
+    var ch = m[i].slice().sort().join('|');
+    if (!g[ch]) { g[ch] = { comps: m[i], v: [] }; ordem.push(ch); }
+    g[ch].v.push(i);
+  });
+  var out = ordem.map(function (ch) { return g[ch]; }).sort(function (a, b) { return b.comps.length - a.comps.length; });
+  return { grupos: out, nenhum: nenhum };
+}
+function frasesItens(contribs, k, primeira, seguinte, fraseNenhum) {
+  var r = porItem(contribs, k), out = [], vistos = {};
+  r.grupos.forEach(function (x) {
+    var repete = x.comps.some(function (c) { return vistos[c]; });
+    out.push((repete ? seguinte : primeira)(prefixo(x.comps), lista(k, x.v)));
+    x.comps.forEach(function (c) { vistos[c] = 1; });
+  });
+  if (r.nenhum.length && fraseNenhum) out.push(fraseNenhum(prefixo(r.nenhum)));
+  return out;
+}
+function lista(k, v) { return joinPt(v.filter(function (x) { return x !== 'n'; }).map(function (i) { return frase(k, i); })); }
+function uniao(contribs, k) {
+  var s = {}, out = [];
+  contribs.forEach(function (c) { [].concat(c.dados[k] || []).forEach(function (i) { if (i !== 'n' && !s[i]) { s[i] = 1; out.push(i); } }); });
+  return out.sort(function (a, b) { return a - b; });
+}
+
+function primeiroNome(est) { return nomeBonito(est.nome).split(' ')[0]; }
+
+function encaixarConsid(texto, comp, est) {
+  var t = cleanDash(texto).replace(/\s*\n+\s*/g, ' ');
+  if (!t) return '';
+  if (!/[.!?]$/.test(t)) t += '.';
+  var pre = prefixo([comp]);
+  var w = norm(t.split(/\s+/)[0]).replace(/[^a-z]/g, '');
+  var sujeito = { o: 1, a: 1, ele: 1, ela: 1, seu: 1, sua: 1, tem: 1, e: 1, esta: 1, apresenta: 1, demonstra: 1, precisa: 1, necessita: 1, mostra: 1,
+    consegue: 1, ainda: 1, ja: 1, durante: 1, nas: 1, nos: 1, no: 1, na: 1, em: 1, apesar: 1, mesmo: 1, quando: 1, sempre: 1, costuma: 1,
+    gosta: 1, melhorou: 1, evoluiu: 1, avancou: 1, participa: 1, realiza: 1, faz: 1, nao: 1, possui: 1, frequentemente: 1, raramente: 1, houve: 1 };
+  var pn = norm(primeiroNome(est));
+  if (sujeito[w] || w === pn) {
+    var corpo = w === pn ? t : t.charAt(0).toLowerCase() + t.slice(1);
+    return pre + ', registra-se ainda que ' + corpo;
+  }
+  return pre + ', registra-se a seguinte observação docente: ' + t;
+}
+
+function montar(est, ano, per, contribs) {
+  var nome = nomeBonito(est.nome), ee = contribs.some(function (c) { return c.dados.ee; });
+  var comps = contribs.map(function (c) { return c.componente; });
+  var secs = [];
+  var sujeito = cap(G.o) + ' estudante';
+
+  // Identificação
+  secs.push({ t: 'IDENTIFICAÇÃO', ps: [
+    'O presente relatório refere-se ' + G.ao + ' estudante ' + nome + ', matriculad' + G.o + ' na turma ' + turmaNome(est.turma) +
+    ' do Ensino Fundamental da Escola Municipal Francisca Alves, e reúne as observações registradas ' + prefixo(comps).replace(/^E/, 'e').replace(/^N/, 'n') +
+    ', relativas ' + PERIODO_TXT[per] + (per === 'Anual' ? ' de ' : ' de ') + ano + '.' +
+    (ee ? ' ' + sujeito + ' integra o público da Educação Especial, razão pela qual este relatório também registra os recursos de acessibilidade e os apoios oferecidos.' : '')
+  ] });
+
+  // Desenvolvimento: agrupa por componente com o mesmo conjunto de respostas
+  var des = {}, ordemDes = [];
+  contribs.forEach(function (c) {
+    var partes = ['nivel', 'part', 'auto', 'conv'].filter(function (k) { return c.dados[k] != null; }).map(function (k) { return frase(k, c.dados[k]); });
+    if (!partes.length) return;
+    var ch = partes.join('|');
+    if (!des[ch]) { des[ch] = { partes: partes, comps: [] }; ordemDes.push(ch); }
+    des[ch].comps.push(c.componente);
+  });
+  var pDes = ordemDes.map(function (ch) { var x = des[ch]; return prefixo(x.comps) + ', ' + G.o + ' estudante ' + joinPt(x.partes) + '.'; });
+  if (pDes.length) secs.push({ t: 'DESENVOLVIMENTO E APRENDIZAGEM', ps: [pDes.join(' ')] });
+
+  // Barreiras
+  var pBar = frasesItens(contribs, 'barreiras',
+    function (p, l) { return p + ', foram identificadas como barreiras à aprendizagem e à participação ' + l + '.'; },
+    function (p, l) { return p + ', observou-se também ' + l + '.'; },
+    function (p) { return p + ', não foram identificadas barreiras significativas à aprendizagem e à participação.'; });
+  if (pBar.length) secs.push({ t: 'BARREIRAS À APRENDIZAGEM E À PARTICIPAÇÃO', ps: [pBar.join(' ')] });
+
+  // Inclusão e acessibilidade
+  var inc = [];
+  inc = inc.concat(frasesItens(contribs, 'adapt',
+    function (p, l) { return p + ', foram realizadas adaptações e flexibilizações curriculares, como ' + l + '.'; },
+    function (p, l) { return p + ', adotou-se também ' + l + '.'; }));
+  if (ee) {
+    var rec = uniao(contribs, 'recursos');
+    if (rec.length) inc.push('Como recursos de acessibilidade, são utilizados ' + lista('recursos', rec) + '.');
+    var aee = contribs.filter(function (c) { return c.dados.aee != null; }).map(function (c) { return c.dados.aee; });
+    if (aee.length) inc.push(sujeito + ' ' + frase('aee', aee[aee.length - 1]) + '.');
+    var pr = uniao(contribs, 'prof');
+    if (pr.length) inc.push('O acompanhamento ' + G.do + ' estudante conta com a participação ' + lista('prof', pr) + '.');
+  }
+  if (inc.length) secs.push({ t: 'INCLUSÃO E ACESSIBILIDADE', ps: [inc.join(' ')] });
+
+  // Intervenções
+  var it = [];
+  it = it.concat(frasesItens(contribs, 'estr',
+    function (p, l) { return p + ', as estratégias utilizadas incluíram ' + l + '.'; },
+    function (p, l) { return p + ', utilizou-se também ' + l + '.'; }));
+  it = it.concat(frasesItens(contribs, 'dif',
+    function (p, l) { return p + ', foram propostas ' + l + '.'; },
+    function (p, l) { return p + ', foram propostas também ' + l + '.'; }));
+  var it2 = [];
+  it2 = it2.concat(frasesItens(contribs, 'rec',
+    function (p, l) { return p + ', quanto à recuperação e à retomada de conteúdos, ' + G.o + ' estudante ' + l + '.'; },
+    function (p, l) { return p + ', ' + G.o + ' estudante também ' + l + '.'; },
+    function (p) { return p + ', ' + G.o + ' estudante não necessitou de recuperação no período.'; }));
+  it2 = it2.concat(frasesItens(contribs, 'aval',
+    function (p, l) { return p + ', as avaliações contaram com ' + l + '.'; },
+    function (p, l) { return p + ', as avaliações contaram também com ' + l + '.'; },
+    function (p) { return p + ', as avaliações foram aplicadas sem adaptações.'; }));
+  var it3 = agrupar(contribs, 'resp').map(function (x) { return prefixo(x.comps) + ', ' + G.o + ' estudante ' + frase('resp', x.v[0]) + '.'; });
+  var psInt = [it.join(' '), it2.join(' '), it3.join(' ')].filter(Boolean);
+  if (psInt.length) secs.push({ t: 'INTERVENÇÕES PEDAGÓGICAS E RESULTADOS', ps: psInt });
+
+  // Considerações finais
+  var fin = [], p1 = [];
+  var pot = uniao(contribs, 'pot');
+  if (pot.length) p1.push('Destacam-se como potencialidades e interesses ' + G.do + ' estudante ' + lista('pot', pot) + '.');
+  p1 = p1.concat(frasesItens(contribs, 'av',
+    function (p, l) { return p + ', os principais avanços ocorreram ' + l + '.'; },
+    function (p, l) { return p + ', houve avanços também ' + l + '.'; }));
+  p1 = p1.concat(frasesItens(contribs, 'dp',
+    function (p, l) { return p + ', permanecem dificuldades ' + l + '.'; },
+    function (p, l) { return p + ', persistem também dificuldades ' + l + '.'; }));
+  if (p1.length) fin.push(p1.join(' '));
+  var p2 = [], rc = uniao(contribs, 'recom'), fm = uniao(contribs, 'fam');
+  if (rc.length) p2.push('Para o próximo período ou ano escolar, recomenda-se ' + lista('recom', rc) + '.');
+  if (fm.length) p2.push('À família, orienta-se ' + lista('fam', fm) + '.');
+  if (p2.length) fin.push(p2.join(' '));
+  var cons = contribs.filter(function (c) { return String(c.consideracao || '').trim(); })
+    .sort(function (a, b) { return ((COMPPOR[a.componente] || {}).i || 99) - ((COMPPOR[b.componente] || {}).i || 99); })
+    .map(function (c) { return encaixarConsid(c.consideracao, c.componente, est); });
+  if (cons.length) fin.push(cons.join(' '));
+  if (fin.length) secs.push({ t: 'CONSIDERAÇÕES FINAIS E ENCAMINHAMENTOS', ps: fin });
+
+  secs.forEach(function (s, i) { s.t = (i + 1) + '. ' + s.t; });
+  var sigs = contribs.slice().sort(function (a, b) { return ((COMPPOR[a.componente] || {}).i || 99) - ((COMPPOR[b.componente] || {}).i || 99); })
+    .map(function (c) { return c.professor + ' (' + c.componente + ')'; });
+  sigs.push('Coordenação pedagógica');
+  return { secs: secs, sigs: sigs, titulo: 'RELATÓRIO DE DESENVOLVIMENTO DO ESTUDANTE' };
+}
+
+// ---------- documento ----------
+function abrirRelatorio(est, ano, per, voltar) {
+  chamar('Juntando os registros…', 'contribuicoes', est.id, ano, per).then(function (cs) {
+    if (!cs.length) { toast('Ainda não há registros deste estudante neste período.'); return; }
+    var pn = norm(primeiroNome(est));
+    $('#d-gen').value = /a$/.test(pn) && !/^(luca|joshua|nicola|batista|elias)$/.test(pn) ? 'a' : 'o';
+    if (!$('#d-data').value) $('#d-data').value = todayISO();
+    docCtx = { est: est, ano: ano, per: per, contribs: cs, voltar: voltar };
+    renderDoc(); show('doc'); window.scrollTo(0, 0);
+  }).catch(function (err) { toast(err.message); });
+}
+function renderDoc() {
+  var g = $('#d-gen').value;
+  G = g === 'a' ? { o: 'a', O: 'A', do: 'da', ao: 'à' } : { o: 'o', O: 'O', do: 'do', ao: 'ao' };
+  var r = montar(docCtx.est, docCtx.ano, docCtx.per, docCtx.contribs);
+  docCtx.r = r;
+  $('#doc').innerHTML = '<div class="head" contenteditable="false">' + HEADER.map(esc).join('<br>') + '</div><h2>' + esc(r.titulo) + '</h2>' +
+    r.secs.map(function (s) { return '<h3>' + esc(s.t) + '</h3>' + s.ps.map(function (p) { return '<p>' + esc(p) + '</p>'; }).join(''); }).join('') +
+    '<p style="text-align:right;margin-top:16px">Belo Horizonte, ' + esc(fmtLong($('#d-data').value || todayISO())) + '.</p>' +
+    '<div class="sigs">' + r.sigs.map(function (s) { return '<div class="sig">' + esc(s) + '</div>'; }).join('') + '</div>';
+}
+['#d-gen', '#d-data'].forEach(function (s) { $(s).addEventListener('change', renderDoc); });
+
+// Lê o que está na folha (com as correções feitas à mão)
+function blocosDaFolha() {
+  var out = [];
+  [].forEach.call($('#doc').children, function (n) {
+    if (n.classList.contains('head')) return;
+    if (n.classList.contains('sigs')) { [].forEach.call(n.children, function (s) { out.push({ tipo: 'sig', txt: s.innerText.trim() }); }); return; }
+    var txt = n.innerText.replace(/\s+/g, ' ').trim(); if (!txt) return;
+    var tipo = n.tagName === 'H2' ? 'titulo' : n.tagName === 'H3' ? 'secao' : (n.style.textAlign === 'right' ? 'data' : 'p');
+    out.push({ tipo: tipo, txt: txt });
+  });
+  return out;
+}
+function textoPuro() {
+  var b = blocosDaFolha(), linhas = [HEADER.join('\n'), ''];
+  b.forEach(function (x) {
+    if (x.tipo === 'sig') linhas.push('', '_______________________________', x.txt);
+    else linhas.push(x.txt, '');
+  });
+  return linhas.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+}
+function wordFile() {
+  var b = blocosDaFolha(), corpo = '', sigs = '';
+  b.forEach(function (x) {
+    if (x.tipo === 'titulo') corpo += '<p class=MsoNormal style="text-align:center;font-weight:bold;font-size:13pt;margin:18pt 0 12pt">' + esc(x.txt) + '</p>';
+    else if (x.tipo === 'secao') corpo += '<p class=MsoNormal style="font-weight:bold;margin:12pt 0 6pt">' + esc(x.txt) + '</p>';
+    else if (x.tipo === 'data') corpo += '<p class=MsoNormal style="text-align:right;margin-top:12pt">' + esc(x.txt) + '</p>';
+    else if (x.tipo === 'sig') sigs += '<p class=MsoNormal style="text-align:center;margin-top:36pt">______________________________________<br>' + esc(x.txt) + '</p>';
+    else corpo += '<p class=MsoNormal style="text-align:justify;line-height:150%">' + esc(x.txt) + '</p>';
+  });
+  return '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><title>Relatório do estudante</title>' +
+    '<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom></w:WordDocument></xml><![endif]-->' +
+    '<style>@page Section1{size:21cm 29.7cm;margin:2cm 2cm 2cm 2cm;mso-footer:f1}div.Section1{page:Section1}body,p{font-family:Calibri,sans-serif;font-size:12pt}p.MsoNormal{margin:0 0 8pt 0}p.MsoFooter{text-align:center;font-size:9pt}</style></head><body><div class=Section1>' +
+    '<p class=MsoNormal style="text-align:center;font-weight:bold;font-size:11pt;line-height:120%;margin:0">' + HEADER.map(esc).join('<br>') + '</p>' +
+    corpo + sigs +
+    '<div style="mso-element:footer" id=f1><p class=MsoFooter>Página <span style="mso-field-code:\' PAGE \'"></span></p></div></div></body></html>';
+}
+$('#btn-voltar').addEventListener('click', function () { show(docCtx ? docCtx.voltar : 'preencher'); });
+$('#btn-imprimir').addEventListener('click', function () { window.print(); });
+$('#btn-copiar').addEventListener('click', function () {
+  var txt = textoPuro();
+  var ok = function () { toast('Texto copiado'); };
+  var fallback = function () { var s = window.getSelection(), rg = document.createRange(); rg.selectNodeContents($('#doc')); s.removeAllRanges(); s.addRange(rg); toast('Texto selecionado. Use copiar do aparelho.'); };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(ok, fallback); else fallback();
+});
+$('#btn-baixar').addEventListener('click', function () {
+  var nome = nomeBonito(docCtx.est.nome).normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9]+/g, '_');
+  var blob = new Blob(['﻿' + wordFile()], { type: 'application/msword' });
+  var a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'Relatorio_' + nome + '_' + docCtx.per.replace(/[^A-Za-z0-9]+/g, '') + '_' + docCtx.ano + '.doc';
+  document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+});
+
+// ---------- navegação e sessão ----------
+function show(v) {
+  view = v;
+  ['login', 'preencher', 'relatorios', 'doc'].forEach(function (x) { $('#view-' + x).hidden = x !== v; });
+  $('#tabs').hidden = v === 'login';
+  [].forEach.call(document.querySelectorAll('nav.tabs button'), function (b) { b.setAttribute('aria-selected', String(b.dataset.view === v)); });
+  if (v === 'preencher') renderEstList();
+  if (v === 'relatorios') renderRList();
+  topo();
+}
+[].forEach.call(document.querySelectorAll('nav.tabs button'), function (b) { b.addEventListener('click', function () { show(b.dataset.view); }); });
+
+function topo() {
+  var u = $('#topUser');
+  if (!SESS) { u.innerHTML = '<span style="opacity:.85">Relatórios de desenvolvimento</span>'; return; }
+  u.innerHTML = '<span>' + esc(SESS.eu.nome) + '</span><button type="button" id="btnAtualizar">Atualizar</button><button type="button" id="btnSair">Sair</button>';
+  $('#btnSair').onclick = function () { var tk = SESS && SESS.token; sairLocal(); api('sair', tk).catch(function () {}); show('login'); };
+  $('#btnAtualizar').onclick = carregarTudo;
+}
+function sairLocal() { SESS = null; lsSet(CHAVE, null); INDICE = []; ESTUD = []; ESTPOR = {}; atual = null; meu = null; }
+
+$('#loginForm').addEventListener('submit', function (e) {
+  e.preventDefault();
+  var u = $('#lUsu').value.trim(), s = $('#lSen').value;
+  if (!u || !s) { $('#lErro').textContent = 'Preencha o usuário e a senha.'; return; }
+  $('#lErro').textContent = '';
+  chamar('Entrando…', 'entrar', u, s).then(function (r) {
+    SESS = r; lsSet(CHAVE, JSON.stringify(r)); $('#lSen').value = ''; carregarTudo();
+  }).catch(function (err) { $('#lErro').textContent = err.message; });
+});
+
+function carregarTudo() {
+  chamar('Carregando turmas e registros…', 'iniciar').then(function (d) {
+    $('#conn').hidden = true; setDados(d);
+    if (d.eu) { SESS.eu = d.eu; lsSet(CHAVE, JSON.stringify(SESS)); }
+    show(view === 'login' || view === 'doc' ? 'preencher' : view);
+  }).catch(function (err) {
+    if (!SESS) { show('login'); $('#lErro').textContent = err.message; return; }
+    $('#conn').hidden = false; $('#conn').className = 'banner warn'; $('#conn').textContent = err.message;
+  });
+}
+
+montarSecoes();
+if (SESS && SESS.token) { view = 'preencher'; topo(); carregarTudo(); } else { show('login'); }
+</script>
+</body>
+</html>
