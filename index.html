@@ -177,6 +177,18 @@ table.rank tr:hover td{background:var(--surface-2)}
 .est-list button[aria-pressed="true"] .badge{background:rgba(255,255,255,.2);color:inherit}
 .grp{display:flex;flex-direction:column;gap:8px}
 .grp + .grp{border-top:1px dashed var(--line);padding-top:14px}
+.hab-row{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line)}
+.hab-row:last-child{border-bottom:0}
+details.mais{border-top:1px dashed var(--line);padding-top:12px}
+details.mais summary{cursor:pointer;font-weight:600;color:var(--accent);padding:4px 0}
+details.mais[open] summary{margin-bottom:6px}
+.hab-row .t{flex:1 1 220px;min-width:0;font-size:.93rem}
+.hab-row .chips.st{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;flex:1 1 300px;max-width:380px}
+.hab-row .chips.st .chip{display:flex}
+.hab-row .chips.st .chip span{flex:1;display:flex;align-items:center;justify-content:center;text-align:center;padding:6px 4px;font-size:.78rem;line-height:1.25;border-radius:8px}
+.st .chip input[value=c]:checked+span{background:var(--leve);border-color:var(--leve);color:#fff}
+.st .chip input[value=e]:checked+span{background:var(--media);border-color:var(--media);color:#fff}
+.st .chip input[value=n]:checked+span{background:var(--grave);border-color:var(--grave);color:#fff}
 .grp .lbl small{text-transform:none;letter-spacing:0;font-weight:500}
 .alvo{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;background:var(--surface-2);border-radius:8px;padding:10px 14px}
 .alvo b{font-family:var(--f-display);font-size:1.05rem}
@@ -250,6 +262,7 @@ table.rank tr:hover td{background:var(--surface-2)}
 
         <div id="corpo" hidden>
           <div class="alvo" id="alvo"></div>
+          <div id="habSec" hidden></div>
           <div id="secoes"></div>
 
           <div class="sheet"><fieldset>
@@ -568,6 +581,285 @@ function contribsDe(estId, ano, per) {
   var lc = lsGet('relatorios_comp'); if (lc && COMPPOR[lc]) $('#f-comp').value = lc;
 })();
 
+
+/* Habilidades por componente e ano. Cada item é um trecho que completa "consolidou ...".
+   O rótulo da tela sai do próprio trecho, sem o artigo inicial. */
+var AREAS = { LP: 'Língua Portuguesa', MAT: 'Matemática' };
+var HAB = {
+  LP: {
+    1: ['o reconhecimento das letras do alfabeto', 'a escrita do próprio nome', 'a relação entre sons e letras',
+      'a leitura e a escrita de sílabas canônicas', 'a leitura de palavras simples', 'a escrita de palavras simples',
+      'a compreensão de textos lidos pelo professor'],
+    2: ['a leitura e a escrita de sílabas não canônicas', 'a segmentação das palavras na escrita',
+      'a leitura de frases e textos curtos com autonomia', 'a escrita de frases com sentido completo',
+      'o uso de letra maiúscula e de ponto final', 'a localização de informações em textos curtos'],
+    3: ['a fluência na leitura em voz alta', 'a ortografia de regularidades como R/RR, S/SS e M antes de P e B',
+      'o uso dos sinais de pontuação básicos', 'a compreensão de textos curtos',
+      'a produção de pequenos textos com começo, meio e fim', 'a escrita com letra cursiva'],
+    4: ['a localização de informações explícitas no texto', 'a identificação do assunto principal do texto',
+      'a organização do texto em parágrafos', 'o uso da pontuação no discurso direto',
+      'a ortografia de palavras de uso frequente', 'a concordância entre as palavras na frase'],
+    5: ['a inferência de informações implícitas no texto', 'a identificação da finalidade de diferentes gêneros textuais',
+      'a produção de textos coesos e organizados em parágrafos', 'o uso de pronomes para evitar repetições',
+      'a acentuação de palavras de uso frequente', 'a leitura de gráficos, tabelas e textos com imagens'],
+    6: ['a identificação do gênero e da finalidade dos textos', 'a inferência de sentidos no texto',
+      'a coesão por meio de pronomes e sinônimos', 'o uso adequado da pontuação',
+      'a produção de textos narrativos', 'a ortografia e a acentuação'],
+    7: ['a interpretação de textos de diferentes gêneros', 'o uso de conectivos na construção do texto',
+      'a concordância verbal e nominal', 'a distinção entre fato e opinião',
+      'a produção de textos com coesão e coerência', 'a leitura crítica de textos jornalísticos e publicitários'],
+    8: ['a interpretação de textos mais complexos', 'a argumentação na produção de textos',
+      'a organização das orações no período composto', 'o uso de recursos de coesão',
+      'a identificação de teses e argumentos', 'a adequação da linguagem à situação de comunicação'],
+    9: ['a leitura crítica e a interpretação de textos diversos', 'a produção de textos dissertativo-argumentativos',
+      'o reconhecimento das relações entre textos', 'o domínio das normas da língua escrita',
+      'a identificação de efeitos de sentido, como ironia, humor e ambiguidade', 'a revisão e a reescrita dos próprios textos']
+  },
+  MAT: {
+    1: ['a contagem de objetos', 'a leitura e a escrita dos números até 100', 'a sequência numérica',
+      'a comparação de quantidades', 'a adição e a subtração com apoio de material concreto',
+      'o reconhecimento de figuras geométricas planas'],
+    2: ['a compreensão de unidade, dezena e centena', 'a adição e a subtração com reagrupamento',
+      'a resolução de problemas simples de adição e subtração', 'a leitura de horas e o uso do calendário',
+      'o reconhecimento do sistema monetário', 'a noção de dobro e metade'],
+    3: ['a ideia de multiplicação', 'as tabuadas do 2 ao 5', 'a leitura e a escrita de números até a unidade de milhar',
+      'a resolução de problemas de adição, subtração e multiplicação',
+      'o uso de medidas de comprimento, massa e capacidade', 'a leitura de tabelas e gráficos simples'],
+    4: ['as tabuadas até o 10', 'a divisão com divisor de um algarismo', 'a ideia de fração',
+      'a resolução de problemas com as quatro operações', 'o cálculo de perímetro',
+      'a leitura e a interpretação de tabelas e gráficos'],
+    5: ['as operações com números decimais', 'a comparação de frações e as frações equivalentes',
+      'o cálculo de porcentagens simples', 'a resolução de problemas com mais de uma operação',
+      'o cálculo de área e de perímetro', 'o uso do sistema monetário em situações-problema'],
+    6: ['as operações com números naturais', 'as operações com frações e números decimais',
+      'os múltiplos e divisores, incluindo MMC e MDC', 'a resolução de problemas com porcentagem',
+      'o reconhecimento de ângulos e polígonos', 'a interpretação de gráficos e tabelas'],
+    7: ['as operações com números inteiros', 'a resolução de equações do 1º grau',
+      'a razão, a proporção e a regra de três', 'o raciocínio algébrico',
+      'a geometria plana, com ângulos, triângulos e áreas', 'a interpretação de dados e a probabilidade'],
+    8: ['o cálculo algébrico com expressões e polinômios', 'a resolução de sistemas de equações',
+      'a potenciação e a radiciação', 'a resolução de problemas com porcentagem e juros',
+      'a geometria, com áreas, volumes e congruência', 'a estatística, com médias e gráficos'],
+    9: ['as equações do 2º grau', 'a noção de função e a leitura de gráficos',
+      'o teorema de Pitágoras e as relações no triângulo', 'os números reais',
+      'a proporcionalidade e a semelhança', 'a estatística e a probabilidade']
+  }
+};
+var NIVEIS_ESCRITA = ['pré-silábica', 'silábica sem valor sonoro', 'silábica com valor sonoro', 'silábico-alfabética', 'alfabética'];
+// Demais componentes. faixa() repete a mesma lista em vários anos.
+function faixa(lista, anos) { var o = {}; anos.forEach(function (a) { o[a] = lista; }); return o; }
+function juntar() { var o = {}; [].forEach.call(arguments, function (x) { Object.keys(x).forEach(function (k) { o[k] = x[k]; }); }); return o; }
+AREAS.CIE = 'Ciências'; AREAS.HIS = 'História'; AREAS.GEO = 'Geografia';
+AREAS.ART = 'Arte'; AREAS.EF = 'Educação Física'; AREAS.ING = 'Língua Inglesa';
+HAB.CIE = {
+  1: ['a identificação das partes do corpo humano e dos hábitos de higiene', 'a observação de características de materiais e objetos',
+    'a distinção entre seres vivos e elementos não vivos', 'a percepção da passagem do dia e da noite'],
+  2: ['a identificação de plantas e animais e de suas características', 'o reconhecimento da importância da água e da luz para os seres vivos',
+    'a prevenção de acidentes domésticos', 'o reconhecimento das propriedades dos materiais'],
+  3: ['a observação das características dos animais', 'a percepção do som, da luz e da formação de sombras',
+    'os cuidados com a saúde auditiva e visual', 'a identificação das características do planeta Terra'],
+  4: ['a compreensão das cadeias alimentares', 'o reconhecimento do papel dos microrganismos',
+    'a identificação de misturas e transformações dos materiais', 'a orientação pelos pontos cardeais e pela posição do Sol'],
+  5: ['a compreensão do ciclo da água', 'o funcionamento dos sistemas digestório, respiratório e circulatório',
+    'a compreensão de hábitos alimentares saudáveis', 'a identificação das fases da Lua e dos movimentos da Terra'],
+  6: ['a compreensão da célula como unidade dos seres vivos', 'o reconhecimento de misturas e transformações químicas',
+    'a compreensão da estrutura da Terra', 'o funcionamento do sistema nervoso e dos órgãos dos sentidos'],
+  7: ['as relações entre os seres vivos e o ambiente', 'os conceitos de calor, temperatura e máquinas simples',
+    'a compreensão de fenômenos naturais e de impactos ambientais', 'a relação entre ciência, tecnologia e saúde'],
+  8: ['as transformações da puberdade e o sistema reprodutor', 'os conceitos de energia e eletricidade',
+    'as relações entre Sol, Terra e Lua e os fenômenos do clima', 'o uso do método científico e a leitura de dados'],
+  9: ['a hereditariedade e a evolução dos seres vivos', 'a estrutura da matéria e as transformações químicas',
+    'os fenômenos de ondas, luz e radiação', 'a compreensão do Universo e da sustentabilidade']
+};
+HAB.HIS = {
+  1: ['o reconhecimento da própria história e da história da família', 'a noção de tempo, com antes, agora e depois',
+    'a identificação de regras de convivência', 'o uso de objetos e documentos pessoais como fontes de memória'],
+  2: ['a compreensão de passado e presente na comunidade', 'a organização de fatos em sequência temporal',
+    'a identificação de diferentes formas de trabalho', 'o uso do calendário e de linhas do tempo simples'],
+  3: ['a história do bairro e da cidade', 'a identificação de marcos históricos da comunidade',
+    'a diferença entre espaços públicos e privados', 'a leitura de fontes históricas simples'],
+  4: ['as migrações e a formação dos povos', 'a história dos povos indígenas e africanos no Brasil',
+    'a relação entre trabalho e transformação da natureza', 'a leitura de linhas do tempo e de mapas históricos'],
+  5: ['a compreensão da cidadania e dos direitos', 'a formação das primeiras civilizações',
+    'a análise de diferentes fontes históricas', 'o respeito à diversidade cultural'],
+  6: ['a noção de tempo histórico e a periodização', 'as civilizações da Antiguidade',
+    'a análise de fontes históricas', 'a história dos povos originários da América'],
+  7: ['a formação do mundo moderno', 'a colonização da América e o Brasil colonial',
+    'a escravidão e a resistência dos povos africanos e indígenas', 'a análise crítica de fontes e de diferentes versões dos fatos'],
+  8: ['as revoluções e a formação do mundo contemporâneo', 'a independência e o Brasil Império',
+    'a relação entre passado e presente', 'a argumentação a partir de fontes históricas'],
+  9: ['a história do Brasil República', 'os conflitos mundiais do século XX',
+    'a construção da democracia e dos direitos humanos', 'a análise crítica de fatos históricos e da atualidade']
+};
+HAB.GEO = {
+  1: ['o reconhecimento dos espaços de convivência, como casa, escola e rua', 'a noção de localização, como perto, longe, dentro e fora',
+    'a observação das mudanças do tempo atmosférico', 'a representação de lugares por desenhos'],
+  2: ['a localização de objetos e lugares a partir de referências', 'o reconhecimento de diferentes tipos de moradia e de trabalho',
+    'a leitura de imagens e croquis simples', 'a relação entre os elementos naturais e as atividades humanas'],
+  3: ['a leitura de mapas simples', 'a identificação de paisagens naturais e modificadas',
+    'o uso da água e dos recursos naturais', 'a diferença entre campo e cidade'],
+  4: ['o uso dos pontos cardeais', 'a leitura de mapas com legenda',
+    'a divisão política do Brasil e de Minas Gerais', 'a relação entre campo e cidade'],
+  5: ['a leitura de mapas, gráficos e escalas', 'as regiões brasileiras',
+    'os problemas ambientais e a qualidade de vida', 'a urbanização e as redes de transporte e comunicação'],
+  6: ['a leitura de mapas e as coordenadas geográficas', 'as formas de relevo, hidrografia e clima',
+    'a relação entre sociedade e natureza', 'os conceitos de paisagem, lugar e território'],
+  7: ['a formação territorial e a população do Brasil', 'as regiões e a economia brasileiras',
+    'a leitura de mapas temáticos e gráficos', 'as questões ambientais no Brasil'],
+  8: ['a geografia da América e da África', 'a população mundial e os fluxos migratórios',
+    'a análise de dados e de mapas temáticos', 'a relação entre economia, território e meio ambiente'],
+  9: ['a globalização e o mundo contemporâneo', 'a geografia da Europa, da Ásia e da Oceania',
+    'os conflitos territoriais e a geopolítica', 'a análise crítica de mapas, dados e notícias']
+};
+HAB.ART = juntar(
+  faixa(['a exploração de cores, formas e texturas', 'a expressão por meio do desenho e da pintura',
+    'a participação em atividades de música e dança', 'a apreciação das produções dos colegas'], [1, 2]),
+  faixa(['o uso de diferentes materiais e técnicas artísticas', 'o conhecimento de manifestações culturais brasileiras',
+    'a criação em artes visuais, música, dança e teatro', 'a apreciação e a análise de obras de arte'], [3, 4, 5]),
+  { 6: ['os elementos da linguagem visual', 'a produção artística com diferentes técnicas',
+    'o conhecimento da arte brasileira, indígena e afro-brasileira', 'a leitura e a análise de obras de arte'] },
+  faixa(['a criação e a experimentação nas linguagens artísticas', 'a contextualização histórica e cultural da arte',
+    'a leitura crítica de imagens e produções artísticas', 'o trabalho colaborativo em projetos artísticos'], [7, 8, 9]));
+HAB.EF = juntar(
+  faixa(['a coordenação motora e o equilíbrio', 'a participação em brincadeiras e jogos',
+    'o respeito às regras e aos colegas', 'a consciência corporal'], [1, 2]),
+  faixa(['a prática de jogos e esportes de diferentes tipos', 'as danças e as ginásticas',
+    'o respeito às regras e o trabalho em equipe', 'a compreensão dos benefícios da atividade física'], [3, 4, 5]),
+  { 6: ['os fundamentos dos esportes coletivos', 'as lutas, as danças e as ginásticas',
+    'o espírito esportivo e o trabalho em equipe', 'a relação entre atividade física e saúde'] },
+  faixa(['a prática esportiva com domínio de fundamentos e regras', 'as práticas corporais de aventura, lutas e danças',
+    'o espírito esportivo e a cooperação', 'a reflexão sobre corpo, saúde e qualidade de vida'], [7, 8, 9]));
+HAB.ING = juntar(
+  faixa(['o reconhecimento de palavras e expressões do cotidiano', 'a compreensão oral de comandos simples',
+    'o vocabulário de cores, números, animais e família', 'a participação em músicas e jogos em inglês'], [1, 2, 3, 4, 5]),
+  { 6: ['a apresentação pessoal e a comunicação oral simples', 'o vocabulário do cotidiano escolar e familiar',
+      'a leitura de textos curtos com apoio de imagens', 'o uso do presente simples'],
+    7: ['a compreensão de textos orais e escritos simples', 'o uso dos tempos verbais do presente e do passado',
+      'a produção de pequenos textos', 'a ampliação do vocabulário'],
+    8: ['a leitura de textos de diferentes gêneros', 'o uso de estruturas para falar do futuro',
+      'a produção oral e escrita sobre temas do cotidiano', 'o uso de estratégias de leitura, como palavras cognatas e contexto'],
+    9: ['a leitura e a interpretação de textos autênticos', 'a argumentação simples em língua inglesa',
+      'o uso de estruturas gramaticais variadas', 'a reflexão sobre o inglês como língua global'] });
+var COMP_AREA = { 'Língua Portuguesa': 'LP', 'Matemática': 'MAT', 'Ciências': 'CIE', 'História': 'HIS', 'Geografia': 'GEO',
+  'Arte': 'ART', 'Educação Física': 'EF', 'Língua Inglesa': 'ING' };
+var ESTADOS = [['c', 'Consolidado'], ['e', 'Em consolidação'], ['n', 'Não consolidado']];
+
+function rotuloHab(t) { return cap(t.replace(/^(as|os|a|o) /, '').replace(/(, | e )(as|os|a|o) /g, '$1')); }
+function contrai(t) { return t.replace(/^(as|os|a|o) /, 'd$1 ').replace(/(, | e )(as|os|a|o) /g, '$1d$2 '); }
+function anoEscolar(turma) { var m = /^(\d)º/.exec(turmaNome(turma)); return m ? Number(m[1]) : null; }
+function areasDoComp(comp, ano) {
+  if (!ano) return [];
+  if (comp === 'Regência (anos iniciais)') return ano <= 5 ? ['LP', 'MAT', 'CIE', 'HIS', 'GEO'] : [];
+  var a = COMP_AREA[comp];
+  return a && HAB[a][ano] ? [a] : [];
+}
+function anoAtual() { return anoEscolar(atual && atual.turma) || Number($('#f-anoesc') ? $('#f-anoesc').value : 0) || null; }
+
+function renderHab() {
+  var box = $('#habSec'), f = filtroAtual();
+  var anoTurma = anoEscolar(atual && atual.turma);
+  var ano = anoTurma || Number(box.dataset.ano || 0) || null;
+  var compTemHab = !!COMP_AREA[f.comp] || f.comp === 'Regência (anos iniciais)';
+  if (!compTemHab) { box.innerHTML = ''; box.hidden = true; return; }
+  var seletor = anoTurma ? '' : '<label class="f" style="max-width:220px"><span>Ano escolar</span><select id="f-anoesc"><option value="">Escolha</option>' +
+    [1, 2, 3, 4, 5, 6, 7, 8, 9].map(function (n) { return '<option value="' + n + '"' + (n === ano ? ' selected' : '') + '>' + n + 'º ano</option>'; }).join('') + '</select></label>';
+  var areas = areasDoComp(f.comp, ano);
+  var corpo = '';
+  if (!ano) corpo = '<p class="hint" style="margin:0">Não foi possível saber o ano pela turma. Escolha o ano escolar acima para ver as habilidades.</p>';
+  else if (!areas.length) corpo = '<p class="hint" style="margin:0">A regência só tem habilidades do 1º ao 5º ano.</p>';
+  else corpo = areas.map(function (a) {
+    var itens = HAB[a][ano] || [];
+    var nivel = (a === 'LP' && ano <= 2) ? '<div class="grp"><div class="lbl">Nível de escrita <small>(escolha uma)</small></div><div class="chips">' +
+      NIVEIS_ESCRITA.map(function (n, i) { return '<label class="chip"><input type="radio" name="nivelEscrita" value="' + i + '"><span>' + esc(cap(n)) + '</span></label>'; }).join('') + '</div></div>' : '';
+    return '<div class="grp"><div class="lbl">' + esc(AREAS[a]) + ' · ' + ano + 'º ano <small>(marque a situação de cada item; deixe em branco o que não avaliou)</small></div>' + nivel +
+      itens.map(function (t, i) {
+        var nm = 'h-' + a + ano + '-' + i;
+        return '<div class="hab-row"><div class="t">' + esc(rotuloHab(t)) + '</div><div class="chips st">' +
+          ESTADOS.map(function (s) { return '<label class="chip"><input type="radio" name="' + nm + '" value="' + s[0] + '"><span>' + s[1] + '</span></label>'; }).join('') + '</div></div>';
+      }).join('') +
+      '<div class="hab-row"><label class="f" style="flex:1"><span>Outro conteúdo (opcional)</span><input type="text" id="ho-' + a + '" placeholder="Ex.: a escrita de palavras com H inicial"></label>' +
+      '<div class="chips st">' + ESTADOS.map(function (s) { return '<label class="chip"><input type="radio" name="hoe-' + a + '" value="' + s[0] + '"><span>' + s[1] + '</span></label>'; }).join('') + '</div></div></div>';
+  });
+  if (Array.isArray(corpo)) corpo = corpo.length > 2
+    ? corpo.slice(0, 2).join('') + '<details class="mais"><summary>Ciências, História e Geografia (opcional)</summary>' + corpo.slice(2).join('') + '</details>'
+    : corpo.join('');
+  box.hidden = false;
+  box.innerHTML = '<div class="sheet"><fieldset><legend>Habilidades do ano</legend>' + seletor + corpo + '</fieldset></div>';
+  var sel = $('#f-anoesc');
+  if (sel) sel.addEventListener('change', function () { var d = lerHab(); box.dataset.ano = sel.value; renderHab(); preencherHab(d); });
+}
+function lerHab() {
+  var box = $('#habSec'); if (box.hidden) return null;
+  var ano = anoEscolar(atual && atual.turma) || Number(box.dataset.ano || 0) || null;
+  var areas = areasDoComp(filtroAtual().comp, ano);
+  if (!areas.length) return null;
+  var h = { ano: ano, itens: {}, outro: {} }, tem = false;
+  areas.forEach(function (a) {
+    (HAB[a][ano] || []).forEach(function (t, i) {
+      var x = document.querySelector('input[name="h-' + a + ano + '-' + i + '"]:checked');
+      if (x) { h.itens[a + ano + '-' + i] = x.value; tem = true; }
+    });
+    var ot = $('#ho-' + a), oe = document.querySelector('input[name="hoe-' + a + '"]:checked');
+    if (ot && ot.value.trim() && oe) { h.outro[a] = { t: ot.value.trim(), st: oe.value }; tem = true; }
+  });
+  var nv = document.querySelector('input[name="nivelEscrita"]:checked');
+  if (nv) { h.nivel = Number(nv.value); tem = true; }
+  return tem ? h : null;
+}
+function preencherHab(h) {
+  var box = $('#habSec');
+  if (h && h.ano && !anoEscolar(atual && atual.turma) && String(box.dataset.ano) !== String(h.ano)) { box.dataset.ano = h.ano; renderHab(); }
+  [].forEach.call(box.querySelectorAll('input[type=radio]'), function (x) { x.checked = false; x.dataset.on = ''; });
+  [].forEach.call(box.querySelectorAll('input[type=text]'), function (x) { x.value = ''; });
+  if (!h) return;
+  Object.keys(h.itens || {}).forEach(function (k) {
+    var x = box.querySelector('input[name="h-' + k + '"][value="' + h.itens[k] + '"]'); if (x) { x.checked = true; x.dataset.on = '1'; }
+  });
+  Object.keys(h.outro || {}).forEach(function (a) {
+    var ot = $('#ho-' + a); if (ot) ot.value = h.outro[a].t;
+    var x = box.querySelector('input[name="hoe-' + a + '"][value="' + h.outro[a].st + '"]'); if (x) { x.checked = true; x.dataset.on = '1'; }
+  });
+  if (h.nivel != null) { var n = box.querySelector('input[name="nivelEscrita"][value="' + h.nivel + '"]'); if (n) { n.checked = true; n.dataset.on = '1'; } }
+}
+// Texto: junta as marcações de todos os professores; para o mesmo item vale a marcação mais recente
+function frasesHab(contribs) {
+  var por = {}, nivel = null, ano = null;
+  contribs.slice().sort(function (a, b) { return String(a.atualizadoEm || '').localeCompare(String(b.atualizadoEm || '')); }).forEach(function (c) {
+    var h = c.dados && c.dados.hab; if (!h) return;
+    ano = h.ano || ano;
+    Object.keys(h.itens || {}).forEach(function (k) {
+      var m = /^([A-Z]+)(\d)-(\d+)$/.exec(k); if (!m) return;
+      var t = (HAB[m[1]] && HAB[m[1]][m[2]] || [])[Number(m[3])]; if (!t) return;
+      var A = por[m[1]] = por[m[1]] || { ano: m[2], c: {}, e: {}, n: {}, ord: [] };
+      ['c', 'e', 'n'].forEach(function (s) { delete A[s][t]; });
+      A[h.itens[k]][t] = 1; if (A.ord.indexOf(t) < 0) A.ord.push(t);
+    });
+    Object.keys(h.outro || {}).forEach(function (a) {
+      var o = h.outro[a], t = cleanDash(o.t).replace(/\.$/, '');
+      t = t.charAt(0).toLowerCase() + t.slice(1);
+      var A = por[a] = por[a] || { ano: h.ano, c: {}, e: {}, n: {}, ord: [] };
+      ['c', 'e', 'n'].forEach(function (s) { delete A[s][t]; });
+      A[o.st][t] = 1; if (A.ord.indexOf(t) < 0) A.ord.push(t);
+    });
+    if (h.nivel != null) nivel = h.nivel;
+  });
+  var out = [];
+  Object.keys(AREAS).forEach(function (a) {
+    var A = por[a]; if (!A) return;
+    var pega = function (s) { return A.ord.filter(function (t) { return A[s][t]; }); };
+    var c = pega('c'), e = pega('e'), n = pega('n'), partes = [];
+    if (c.length) partes.push('consolidou ' + joinPt(c));
+    if (e.length) partes.push('encontra-se em processo de consolidação ' + joinPt(e.map(contrai)));
+    if (n.length) partes.push('ainda não consolidou ' + joinPt(n));
+    if (!partes.length) return;
+    var fr = 'Em ' + AREAS[a] + ', considerando as habilidades previstas para o ' + A.ano + 'º ano, ' + G.o + ' estudante ';
+    fr += partes.length === 1 ? partes[0] : partes.length === 2 ? partes.join(' e ') : partes.slice(0, -1).join('; ') + '; e ' + partes[partes.length - 1];
+    out.push(fr + '.');
+  });
+  if (nivel != null) out.push('Quanto ao processo de alfabetização, ' + G.o + ' estudante encontra-se na hipótese de escrita ' + NIVEIS_ESCRITA[nivel] + '.');
+  return out;
+}
+
 // ---------- formulário de marcações ----------
 function montarSecoes() {
   $('#secoes').innerHTML = '<div class="sheet"><fieldset><legend>Perfil</legend>' +
@@ -586,6 +878,7 @@ function montarSecoes() {
     }).join('');
   $('#f-ee').addEventListener('change', aplicarEE);
   // "um": tocar de novo desmarca; "nenhum" é exclusivo
+  $('#habSec').addEventListener('click', alternarRadio);
   $('#secoes').addEventListener('click', function (e) {
     var inp = e.target.closest('label.chip') && e.target.closest('label.chip').querySelector('input');
     if (!inp || inp.type !== 'radio') return;
@@ -599,6 +892,12 @@ function montarSecoes() {
     else [].forEach.call(irmaos, function (x) { if (x.value === 'n') x.checked = false; });
   });
 }
+function alternarRadio(e) {
+  var lab = e.target.closest('label.chip'), inp = lab && lab.querySelector('input');
+  if (!inp || inp.type !== 'radio') return;
+  if (inp.dataset.on === '1') { e.preventDefault(); inp.checked = false; inp.dataset.on = ''; }
+  else { [].forEach.call(document.getElementsByName(inp.name), function (x) { x.dataset.on = ''; }); setTimeout(function () { inp.dataset.on = inp.checked ? '1' : ''; }, 0); }
+}
 function aplicarEE() {
   var on = $('#f-ee').checked;
   [].forEach.call(document.querySelectorAll('#secoes [data-ee]'), function (g) { g.hidden = !on; });
@@ -611,6 +910,7 @@ function lerDados() {
     var v = [].filter.call(document.getElementsByName('g-' + k), function (x) { return x.checked; }).map(function (x) { return x.value === 'n' ? 'n' : Number(x.value); });
     if (v.length) d[k] = g.tipo === 'um' ? v[0] : v;
   });
+  var h = lerHab(); if (h) d.hab = h;
   return d;
 }
 function preencherDados(d) {
@@ -622,6 +922,7 @@ function preencherDados(d) {
     [].forEach.call(document.getElementsByName('g-' + k), function (x) { x.checked = !!set[x.value]; x.dataset.on = x.checked ? '1' : ''; });
   });
   aplicarEE();
+  renderHab(); preencherHab(d.hab);
 }
 
 function filtroAtual() { return { ano: $('#f-ano').value, per: $('#f-periodo').value, comp: $('#f-comp').value }; }
@@ -647,7 +948,7 @@ function abrirEstudante() {
   var outros = cs.filter(function (c) { return c !== minha; });
   $('#alvo').innerHTML = '<div><b>' + esc(nomeBonito(atual.nome)) + '</b><div class="hint">' + esc(turmaNome(atual.turma)) + ' · ' + esc(f.per) + ' de ' + esc(f.ano) + ' · ' + esc(f.comp) + '</div></div>' +
     '<div class="prog">' + (outros.length ? outros.map(function (c) { return '<span class="pill">' + esc(c.componente) + '</span>'; }).join('') : '<span class="hint">Nenhum outro professor registrou ainda.</span>') + '</div>';
-  $('#corpo').hidden = false; $('#form-msg').textContent = '';
+  $('#corpo').hidden = false; $('#form-msg').textContent = ''; $('#habSec').dataset.ano = '';
   $('#f-prof').value = SESS.eu.nome || '';
   if (!minha) { meu = null; preencherDados({ ee: outrosEE(atual.id, f) }); $('#f-consid').value = ''; $('#btn-apagar').hidden = true; $('#btn-salvar').textContent = 'Salvar minha parte'; return; }
   chamar('Abrindo seu registro…', 'contribuicoes', atual.id, f.ano, f.per).then(function (lista) {
@@ -816,7 +1117,9 @@ function montar(est, ano, per, contribs) {
     des[ch].comps.push(c.componente);
   });
   var pDes = ordemDes.map(function (ch) { var x = des[ch]; return prefixo(x.comps) + ', ' + G.o + ' estudante ' + joinPt(x.partes) + '.'; });
-  if (pDes.length) secs.push({ t: 'DESENVOLVIMENTO E APRENDIZAGEM', ps: [pDes.join(' ')] });
+  var pHab = frasesHab(contribs);
+  var psDes = [pDes.join(' '), pHab.join(' ')].filter(Boolean);
+  if (psDes.length) secs.push({ t: 'DESENVOLVIMENTO E APRENDIZAGEM', ps: psDes });
 
   // Barreiras
   var pBar = frasesItens(contribs, 'barreiras',
