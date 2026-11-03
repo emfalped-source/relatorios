@@ -324,6 +324,7 @@ details.mais[open] summary{margin-bottom:6px}
 </main>
 <div class="carga" id="carga" hidden><div id="cargaMsg">Carregando…</div></div>
 
+<script src="https://emfalped-source.github.io/corretor/conta-emfal.js"></script>
 <script>
 'use strict';
 var API_URL = 'https://script.google.com/macros/s/AKfycbyydNXf359Ht_iY7sAZY1oEONY5Qj9NYPIVmG6mzXav2TF5NBHjw7rjgUMmlDTa_RaUTg/exec';
@@ -1282,10 +1283,12 @@ function show(v) {
 function topo() {
   var u = $('#topUser');
   if (!SESS) { u.innerHTML = '<span style="opacity:.85">Relatórios de desenvolvimento</span>'; return; }
-  u.innerHTML = '<span>' + esc(SESS.eu.nome) + '</span><button type="button" id="btnAtualizar">Atualizar</button><button type="button" id="btnSair">Sair</button>';
+  u.innerHTML = '<span>' + esc(SESS.eu.nome) + '</span><button type="button" id="btnAtualizar">Atualizar</button><button type="button" id="btnConta">Conta</button><button type="button" id="btnSair">Sair</button>';
+  $('#btnConta').onclick = function () { if (window.ContaEMFAL) ContaEMFAL.abrir({ usuario: (SESS && SESS.eu && SESS.eu.usuario) || '' }); else toastOuAlerta('Não foi possível abrir a conta. Verifique a internet.'); };
   $('#btnSair').onclick = function () { var tk = SESS && SESS.token; sairLocal(); api('sair', tk).catch(function () {}); show('login'); };
   $('#btnAtualizar').onclick = carregarTudo;
 }
+function toastOuAlerta(m) { if (typeof toast === 'function') toast(m); else alert(m); }
 function sairLocal() { SESS = null; lsSet(CHAVE, null); INDICE = []; ESTUD = []; ESTPOR = {}; atual = null; meu = null; }
 
 $('#loginForm').addEventListener('submit', function (e) {
@@ -1294,7 +1297,17 @@ $('#loginForm').addEventListener('submit', function (e) {
   if (!u || !s) { $('#lErro').textContent = 'Preencha o usuário e a senha.'; return; }
   $('#lErro').textContent = '';
   chamar('Entrando…', 'entrar', u, s).then(function (r) {
-    SESS = r; lsSet(CHAVE, JSON.stringify(r)); $('#lSen').value = ''; carregarTudo();
+    $('#lSen').value = '';
+    if (r.eu && r.eu.trocarSenha && window.ContaEMFAL) {
+      // senha provisória: cria a senha aqui mesmo e entra de novo com a nova
+      ContaEMFAL.abrir({ usuario: u, senha: s, obrigatoria: true, aoTerminar: function (res) {
+        if (!res.trocouSenha) return;
+        chamar('Entrando…', 'entrar', u, res.senha).then(function (r2) { SESS = r2; lsSet(CHAVE, JSON.stringify(r2)); carregarTudo(); })
+          .catch(function (err) { $('#lErro').textContent = 'Senha criada. Entre com a nova senha. (' + err.message + ')'; });
+      } });
+      return;
+    }
+    SESS = r; lsSet(CHAVE, JSON.stringify(r)); carregarTudo();
   }).catch(function (err) { $('#lErro').textContent = err.message; });
 });
 
