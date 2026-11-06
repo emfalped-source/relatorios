@@ -198,6 +198,20 @@ details.mais[open] summary{margin-bottom:6px}
 .contrib:last-child{border-bottom:0}
 .contrib .meta{font-size:.82rem;color:var(--muted)}
 .prog{display:flex;flex-wrap:wrap;gap:6px}
+.fila{display:flex;flex-direction:column;gap:8px}
+.fitem{display:grid;grid-template-columns:52px 1fr;gap:12px;align-items:center;background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:10px 12px}
+.fitem img{width:52px;height:68px;object-fit:cover;border-radius:4px;border:1px solid var(--line);background:#fff}
+.fitem .nm{font-weight:700}
+.fitem .meta{font-size:.82rem;color:var(--muted)}
+.fitem .erro{min-height:0;font-size:.85rem}
+.fitem .acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.pill.ok{background:var(--leve-bg);color:var(--leve)}
+.pill.av{background:var(--media-bg);color:var(--media)}
+.aviso-folha{border:1px solid var(--media);background:var(--media-bg);border-radius:8px;padding:10px 14px;font-size:.9rem}
+.aviso-folha ul{margin:6px 0 0;padding-left:18px}
+.chip.conferir span,.hab-row.conferir,.switch.conferir{outline:2px dashed var(--ochre);outline-offset:2px}
+.file-btn{position:relative;overflow:hidden}
+.file-btn input{position:absolute;inset:0;opacity:0;cursor:pointer}
 .doc[contenteditable="true"]:focus{outline:2px solid var(--focus);outline-offset:4px}
 .doc h3{font-size:13px;margin:18px 0 6px;letter-spacing:.02em}
 .doc p{text-align:justify;margin:0 0 10px}
@@ -221,6 +235,7 @@ details.mais[open] summary{margin-bottom:6px}
     </div>
     <nav class="tabs" role="tablist" aria-label="Seções" id="tabs" hidden>
       <button role="tab" id="tab-preencher" aria-selected="true" data-view="preencher">Preencher</button>
+      <button role="tab" id="tab-folhas" aria-selected="false" data-view="folhas">Folhas</button>
       <button role="tab" id="tab-relatorios" aria-selected="false" data-view="relatorios">Relatórios</button>
     </nav>
   </div>
@@ -261,6 +276,7 @@ details.mais[open] summary{margin-bottom:6px}
         </fieldset></div>
 
         <div id="corpo" hidden>
+          <div class="aviso-folha" id="avisoFolha" hidden></div>
           <div class="alvo" id="alvo"></div>
           <div id="habSec" hidden></div>
           <div id="secoes"></div>
@@ -277,12 +293,50 @@ details.mais[open] summary{margin-bottom:6px}
             <button type="submit" class="btn primary" id="btn-salvar">Salvar minha parte</button>
             <button type="button" class="btn" id="btn-ver">Ver relatório do estudante</button>
             <button type="button" class="btn danger" id="btn-apagar" hidden>Apagar minha parte</button>
+            <button type="button" class="btn" id="btn-folhas" hidden>Voltar às folhas lidas</button>
             <span class="status-msg" id="form-msg" role="status"></span>
           </div>
         </div>
       </form>
     </section>
 
+    <!-- FOLHAS -->
+    <section id="view-folhas" hidden>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div class="sheet"><fieldset>
+          <legend>Imprimir folhas</legend>
+          <p class="hint" style="margin:0">Gera uma folha com QR Code para cada estudante. O professor marca à caneta e depois fotografa aqui mesmo, e o app preenche a parte dele no relatório.</p>
+          <div class="grid">
+            <label class="f"><span>Ano letivo</span><select id="p-ano"></select></label>
+            <label class="f"><span>Período</span><select id="p-periodo"></select></label>
+            <label class="f"><span>Componente ou função</span><select id="p-comp"></select></label>
+          </div>
+          <div class="grid">
+            <label class="f"><span>Turma</span><select id="p-turma"></select></label>
+            <label class="f"><span>Nome do professor na folha</span><input type="text" id="p-prof"></label>
+          </div>
+          <div class="pick" id="p-pick" hidden>
+            <div class="actions"><button type="button" class="btn small" id="p-todos">Marcar todos</button><button type="button" class="btn small" id="p-nenhum">Desmarcar todos</button><span class="status-msg" id="p-cont"></span></div>
+            <div class="pick-list" id="p-lista"></div>
+          </div>
+          <div class="actions">
+            <button type="button" class="btn primary" id="p-gerar">Gerar PDF das folhas</button>
+            <span class="status-msg" id="p-msg" role="status"></span>
+          </div>
+          <p class="hint" style="margin:0">Imprima em frente e verso. Cada estudante começa numa folha nova, então dá para separar e entregar.</p>
+        </fieldset></div>
+        <div class="sheet"><fieldset>
+          <legend>Ler folhas preenchidas</legend>
+          <p class="hint" style="margin:0">Fotografe cada página inteira, de frente, sobre uma mesa e com boa luz. Pode mandar várias fotos de uma vez, de estudantes diferentes, em qualquer ordem: o app junta as páginas de cada um.</p>
+          <div class="actions">
+            <label class="btn primary file-btn">Tirar foto<input type="file" accept="image/*" capture="environment" id="fotoCam"></label>
+            <label class="btn file-btn">Escolher fotos da galeria<input type="file" accept="image/*" multiple id="fotoGal"></label>
+            <button type="button" class="btn small" id="fila-limpar" hidden>Limpar lista</button>
+          </div>
+          <div class="fila" id="fila"></div>
+        </fieldset></div>
+      </div>
+    </section>
     <!-- RELATÓRIOS -->
     <section id="view-relatorios" hidden>
       <div style="display:flex;flex-direction:column;gap:14px">
@@ -325,6 +379,10 @@ details.mais[open] summary{margin-bottom:6px}
 <div class="carga" id="carga" hidden><div id="cargaMsg">Carregando…</div></div>
 
 <script src="https://emfalped-source.github.io/corretor/conta-emfal.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+<script src="folha.js"></script>
 <script>
 'use strict';
 var API_URL = 'https://script.google.com/macros/s/AKfycbyydNXf359Ht_iY7sAZY1oEONY5Qj9NYPIVmG6mzXav2TF5NBHjw7rjgUMmlDTa_RaUTg/exec';
@@ -939,8 +997,9 @@ function renderEstList() {
   }).join('') : '<button type="button" disabled style="color:var(--muted)">Nenhum estudante encontrado.</button>';
 }
 
-function abrirEstudante() {
+function abrirEstudante(depois) {
   var f = filtroAtual();
+  if (typeof depois !== 'function') { depois = null; limparFolha(); }
   if (!atual) { $('#corpo').hidden = true; return; }
   if (!f.comp) { $('#corpo').hidden = true; $('#form-msg').textContent = ''; toast('Escolha o componente ou a função antes.'); $('#f-comp').focus(); return; }
   lsSet('relatorios_comp', f.comp);
@@ -951,12 +1010,13 @@ function abrirEstudante() {
     '<div class="prog">' + (outros.length ? outros.map(function (c) { return '<span class="pill">' + esc(c.componente) + '</span>'; }).join('') : '<span class="hint">Nenhum outro professor registrou ainda.</span>') + '</div>';
   $('#corpo').hidden = false; $('#form-msg').textContent = ''; $('#habSec').dataset.ano = '';
   $('#f-prof').value = SESS.eu.nome || '';
-  if (!minha) { meu = null; preencherDados({ ee: outrosEE(atual.id, f) }); $('#f-consid').value = ''; $('#btn-apagar').hidden = true; $('#btn-salvar').textContent = 'Salvar minha parte'; return; }
+  if (!minha) { meu = null; preencherDados({ ee: outrosEE(atual.id, f) }); $('#f-consid').value = ''; $('#btn-apagar').hidden = true; $('#btn-salvar').textContent = 'Salvar minha parte'; if (depois) depois({ ee: outrosEE(atual.id, f) }); return; }
   chamar('Abrindo seu registro…', 'contribuicoes', atual.id, f.ano, f.per).then(function (lista) {
     meu = lista.filter(function (c) { return c.id === minha.id; })[0] || null;
     preencherDados(meu ? meu.dados : {}); $('#f-consid').value = meu ? meu.consideracao : '';
     if (meu && meu.professor) $('#f-prof').value = meu.professor;
     $('#btn-apagar').hidden = !meu; $('#btn-salvar').textContent = meu ? 'Salvar alterações' : 'Salvar minha parte';
+    if (depois) depois(meu ? meu.dados : {});
   }).catch(function (err) { toast(err.message); });
 }
 var EECACHE = {};
@@ -982,6 +1042,7 @@ $('#form').addEventListener('submit', function (e) {
   chamar('Salvando…', 'salvarContribuicao', c).then(function (res) {
     setDados(res); meu = res.salvo; if (dados.ee) EECACHE[atual.id + '|' + f.ano + '|' + f.per] = 1;
     toast('Sua parte foi salva'); $('#btn-apagar').hidden = false; $('#btn-salvar').textContent = 'Salvar alterações';
+    if (folhaAtual) { folhaAtual.salvo = true; renderFila(); }
     $('#form-msg').textContent = 'Salvo. Você pode abrir o relatório do estudante ou escolher outro nome na lista.';
     renderEstList();
   }).catch(function (err) { $('#form-msg').textContent = err.message; if (!SESS) show('login'); });
@@ -1268,14 +1329,178 @@ $('#btn-baixar').addEventListener('click', function () {
   document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
 });
 
+
+// ---------- aba Folhas (imprimir com QR Code e ler a foto) ----------
+var CFG_FOLHA = { SECOES: SECOES, HAB: HAB, AREAS: AREAS, NIVEIS: NIVEIS_ESCRITA, areasDoComp: areasDoComp, rotuloHab: rotuloHab };
+var COMP_NOMES = COMPS.map(function (c) { return c.n; });
+var fila = [], filaSeq = 0, folhaAtual = null;
+
+(function () {
+  $('#p-ano').innerHTML = $('#f-ano').innerHTML; $('#p-ano').value = $('#f-ano').value;
+  $('#p-periodo').innerHTML = $('#f-periodo').innerHTML; $('#p-periodo').value = $('#f-periodo').value;
+  $('#p-comp').innerHTML = $('#f-comp').innerHTML; $('#p-comp').value = $('#f-comp').value;
+})();
+function renderPick() {
+  var t = $('#p-turma').value;
+  if (!$('#p-turma').options.length || $('#p-turma').innerHTML !== $('#f-turma').innerHTML) { $('#p-turma').innerHTML = $('#f-turma').innerHTML; $('#p-turma').value = t; t = $('#p-turma').value; }
+  if (!$('#p-prof').value && SESS && SESS.eu) $('#p-prof').value = SESS.eu.nome || '';
+  var lista = ESTUD.filter(function (e) { return e.turma === t; });
+  $('#p-pick').hidden = !t;
+  $('#p-lista').innerHTML = lista.map(function (e) {
+    return '<label><input type="checkbox" value="' + esc(e.id) + '" checked><span>' + esc(nomeBonito(e.nome)) + '</span></label>';
+  }).join('') || '<label>Nenhum estudante nesta turma.</label>';
+  contarPick();
+}
+function contarPick() {
+  var n = $('#p-lista').querySelectorAll('input:checked').length;
+  $('#p-cont').textContent = n ? n + (n === 1 ? ' estudante' : ' estudantes') : '';
+}
+$('#p-turma').addEventListener('change', renderPick);
+$('#p-lista').addEventListener('change', contarPick);
+$('#p-todos').addEventListener('click', function () { [].forEach.call($('#p-lista').querySelectorAll('input'), function (x) { x.checked = true; }); contarPick(); });
+$('#p-nenhum').addEventListener('click', function () { [].forEach.call($('#p-lista').querySelectorAll('input'), function (x) { x.checked = false; }); contarPick(); });
+$('#p-gerar').addEventListener('click', function () {
+  var comp = $('#p-comp').value, t = $('#p-turma').value;
+  if (!comp) { $('#p-msg').textContent = 'Escolha o componente ou a função.'; return; }
+  if (!t) { $('#p-msg').textContent = 'Escolha a turma.'; return; }
+  var ids = [].map.call($('#p-lista').querySelectorAll('input:checked'), function (x) { return x.value; });
+  if (!ids.length) { $('#p-msg').textContent = 'Marque pelo menos um estudante.'; return; }
+  if (!window.jspdf || !window.qrcode || !window.FolhaREL) { $('#p-msg').textContent = 'Não carregou o gerador de PDF. Confira a internet e recarregue a página.'; return; }
+  $('#p-msg').textContent = 'Gerando…';
+  setTimeout(function () {
+    try {
+      var per = $('#p-periodo').value, ests = ids.map(function (id) {
+        var e = ESTPOR[id];
+        return { id: e.id, nome: nomeBonito(e.nome), turma: e.turma, turmaNome: turmaNome(e.turma), anoEsc: anoEscolar(e.turma) || 0 };
+      });
+      var doc = FolhaREL.gerarPDF({ cfg: CFG_FOLHA, ano: $('#p-ano').value, per: PERIODOS.indexOf(per), perNome: per,
+        comp: COMP_NOMES.indexOf(comp), compNome: comp, professor: $('#p-prof').value.trim() }, ests, window.jspdf.jsPDF, window.qrcode, HEADER);
+      var nome = 'Folhas_' + turmaNome(t).replace(/[^A-Za-z0-9]+/g, '') + '_' + comp.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9]+/g, '') + '_' + per.replace(/[^A-Za-z0-9]+/g, '') + '.pdf';
+      doc.save(nome);
+      $('#p-msg').textContent = 'PDF gerado com ' + doc.getNumberOfPages() + ' páginas.';
+    } catch (err) { $('#p-msg').textContent = 'Não foi possível gerar: ' + err.message; }
+  }, 30);
+});
+
+function carregarImagem(file) {
+  return new Promise(function (ok, ko) {
+    var url = URL.createObjectURL(file), im = new Image();
+    im.onload = function () { ok(im); }; im.onerror = function () { ko(new Error('Não consegui abrir esta imagem.')); }; im.src = url;
+  });
+}
+function lerImagem(im, max) {
+  var e = Math.min(1, max / Math.max(im.naturalWidth, im.naturalHeight));
+  var cv = document.createElement('canvas'); cv.width = Math.round(im.naturalWidth * e); cv.height = Math.round(im.naturalHeight * e);
+  var cx = cv.getContext('2d'); cx.drawImage(im, 0, 0, cv.width, cv.height);
+  return FolhaREL.lerPagina(cx.getImageData(0, 0, cv.width, cv.height), window.jsQR, CFG_FOLHA, COMP_NOMES);
+}
+function chaveFolha(c) { return [c.est, c.ano, c.per, c.comp].join('|'); }
+function lerArquivos(files) {
+  files = Array.prototype.slice.call(files || []);
+  if (!files.length) return;
+  if (!window.jsQR || !window.FolhaREL) { toast('Não carregou o leitor. Confira a internet e recarregue a página.'); return; }
+  var cadeia = Promise.resolve();
+  files.forEach(function (file) {
+    var tmp = { k: ++filaSeq, st: 'lendo' };
+    fila.unshift(tmp);
+    cadeia = cadeia.then(function () {
+      renderFila();
+      return carregarImagem(file).then(function (im) {
+        return new Promise(function (ok) { setTimeout(ok, 30); }).then(function () {
+          var tb = document.createElement('canvas'), te = 120 / Math.max(im.naturalWidth, im.naturalHeight);
+          tb.width = im.naturalWidth * te; tb.height = im.naturalHeight * te; tb.getContext('2d').drawImage(im, 0, 0, tb.width, tb.height);
+          tmp.thumb = tb.toDataURL('image/jpeg', 0.7);
+          var r = lerImagem(im, 2200);
+          if (!r.ok && !r.cod && Math.max(im.naturalWidth, im.naturalHeight) > 2200) r = lerImagem(im, 3200);
+          if (!r.ok) { tmp.st = 'erro'; tmp.erro = r.erro; return; }
+          var est = ESTPOR[r.cod.est];
+          if (!est) { tmp.st = 'erro'; tmp.erro = 'O estudante desta folha não está nas suas turmas. Toque em Atualizar ou peça à coordenação para conferir sua lotação.'; return; }
+          var k = chaveFolha(r.cod), item = fila.filter(function (x) { return x.chave === k && x.st === 'ok'; })[0];
+          if (item) { fila.splice(fila.indexOf(tmp), 1); if (item.salvo) item.salvo = false; }
+          else { item = tmp; item.st = 'ok'; item.chave = k; item.paginas = {}; }
+          item.cod = r.cod; item.est = est; item.comp = r.compNome; item.thumb = item.thumb || tmp.thumb;
+          item.paginas[r.cod.pag] = r.valores; item.total = r.cod.tot;
+          item.res = FolhaREL.interpretar(CFG_FOLHA, r.compNome, r.cod.anoEsc, item.paginas, {}, GRUPOS);
+        });
+      }).catch(function (e) { tmp.st = 'erro'; tmp.erro = e.message; });
+    });
+  });
+  cadeia.then(renderFila);
+}
+function renderFila() {
+  $('#fila-limpar').hidden = !fila.length;
+  $('#fila').innerHTML = fila.map(function (f) {
+    var img = f.thumb ? '<img src="' + f.thumb + '" alt="">' : '<img alt="">';
+    if (f.st === 'lendo') return '<div class="fitem">' + img + '<div><div class="nm">Lendo a foto…</div></div></div>';
+    if (f.st === 'erro') return '<div class="fitem">' + img + '<div><div class="nm">Não foi possível ler</div><div class="erro">' + esc(f.erro) + '</div>' +
+      '<div class="acts"><button type="button" class="btn small" data-tirar="' + f.k + '">Tirar da lista</button></div></div></div>';
+    var lidas = Object.keys(f.paginas).length, falta = f.total - lidas, nal = f.res.alertas.length;
+    var pills = (falta ? '<span class="pill av">Faltam ' + falta + (falta === 1 ? ' página' : ' páginas') + '</span> ' : '<span class="pill ok">' + f.total + (f.total === 1 ? ' página lida' : ' páginas lidas') + '</span> ') +
+      (nal ? '<span class="pill av">' + nal + (nal === 1 ? ' item para conferir' : ' itens para conferir') + '</span> ' : '') +
+      (f.salvo ? '<span class="pill ok">Salvo</span>' : '');
+    return '<div class="fitem">' + img + '<div><div class="nm">' + esc(nomeBonito(f.est.nome)) + '</div>' +
+      '<div class="meta">' + esc(turmaNome(f.est.turma)) + ' · ' + esc(f.comp) + ' · ' + esc(PERIODOS[f.cod.per] || '') + ' de ' + esc(f.cod.ano) + '</div>' +
+      '<div class="tags" style="margin-top:4px">' + pills + '</div>' +
+      '<div class="acts"><button type="button" class="btn small primary" data-abrir="' + f.k + '">' + (f.salvo ? 'Abrir de novo' : 'Conferir e salvar') + '</button>' +
+      '<button type="button" class="btn small" data-tirar="' + f.k + '">Tirar da lista</button></div></div></div>';
+  }).join('');
+}
+$('#fotoCam').onchange = function () { lerArquivos(this.files); this.value = ''; };
+$('#fotoGal').onchange = function () { lerArquivos(this.files); this.value = ''; };
+$('#fila-limpar').addEventListener('click', function () { fila = []; renderFila(); });
+$('#fila').addEventListener('click', function (e) {
+  var b = e.target.closest('button'); if (!b) return;
+  var k = Number(b.dataset.abrir || b.dataset.tirar), f = fila.filter(function (x) { return x.k === k; })[0]; if (!f) return;
+  if (b.dataset.tirar) { fila.splice(fila.indexOf(f), 1); renderFila(); return; }
+  abrirDaFolha(f);
+});
+
+function limparFolha() {
+  folhaAtual = null; $('#avisoFolha').hidden = true; $('#btn-folhas').hidden = true;
+  [].forEach.call(document.querySelectorAll('.conferir'), function (x) { x.classList.remove('conferir'); });
+}
+function abrirDaFolha(f) {
+  var c = f.cod;
+  $('#f-ano').value = c.ano;
+  if ($('#f-ano').value !== c.ano) { $('#f-ano').insertAdjacentHTML('beforeend', '<option>' + esc(c.ano) + '</option>'); $('#f-ano').value = c.ano; }
+  $('#f-periodo').value = PERIODOS[c.per]; $('#f-comp').value = f.comp;
+  $('#f-turma').value = f.est.turma; $('#f-busca').value = '';
+  atual = f.est; show('preencher');
+  abrirEstudante(function (base) {
+    limparFolha(); folhaAtual = f;
+    var r = FolhaREL.interpretar(CFG_FOLHA, f.comp, c.anoEsc, f.paginas, base, GRUPOS);
+    preencherDados(r.dados);
+    var marcados = [];
+    r.alertas.forEach(function (a) {
+      var el = null, s = a.sel;
+      if (s.t === 'ee') el = $('#f-ee').closest('label');
+      else if (s.t === 'g') { var i = document.querySelector('input[name="g-' + s.k + '"][value="' + s.v + '"]'); el = i && i.closest('label.chip'); }
+      else if (s.t === 'h') { var j = document.querySelector('input[name="h-' + s.hk + '"]'); el = j && j.closest('.hab-row'); }
+      else if (s.t === 'nv') { var n = document.querySelector('input[name="nivelEscrita"][value="' + s.i + '"]'); el = n && n.closest('label.chip'); }
+      if (el) { el.classList.add('conferir'); marcados.push(el); }
+    });
+    [].forEach.call(document.querySelectorAll('#habSec details.mais'), function (d) {
+      if (d.querySelector('input:checked') || d.querySelector('.conferir')) d.open = true;
+    });
+    var h = '<b>Marcações lidas da folha.</b> Confira as opções abaixo, escreva a sua consideração e toque em ' + (meu ? '"Salvar alterações"' : '"Salvar minha parte"') + '.';
+    if (r.faltam.length) h += '<br>Faltou ler ' + (r.faltam.length === 1 ? 'a página ' : 'as páginas ') + joinPt(r.faltam.map(String)) + ' de ' + r.total + '. ' + (meu ? 'Os itens dessas páginas ficaram como estavam no seu registro.' : 'Os itens dessas páginas ficaram em branco.');
+    if (r.alertas.length) h += '<ul>' + r.alertas.map(function (a) { return '<li>' + esc(a.rot) + ': ' + esc(a.motivo) + '</li>'; }).join('') + '</ul>' +
+      '<div class="hint" style="margin-top:4px">Esses itens estão com contorno tracejado.</div>';
+    $('#avisoFolha').innerHTML = h; $('#avisoFolha').hidden = false; $('#btn-folhas').hidden = false;
+    setTimeout(function () { $('#avisoFolha').scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 60);
+  });
+}
+$('#btn-folhas').addEventListener('click', function () { limparFolha(); show('folhas'); });
+
 // ---------- navegação e sessão ----------
 function show(v) {
   view = v;
-  ['login', 'preencher', 'relatorios', 'doc'].forEach(function (x) { $('#view-' + x).hidden = x !== v; });
+  ['login', 'preencher', 'folhas', 'relatorios', 'doc'].forEach(function (x) { $('#view-' + x).hidden = x !== v; });
   $('#tabs').hidden = v === 'login';
   [].forEach.call(document.querySelectorAll('nav.tabs button'), function (b) { b.setAttribute('aria-selected', String(b.dataset.view === v)); });
   if (v === 'preencher') renderEstList();
   if (v === 'relatorios') renderRList();
+  if (v === 'folhas') { renderPick(); renderFila(); }
   topo();
 }
 [].forEach.call(document.querySelectorAll('nav.tabs button'), function (b) { b.addEventListener('click', function () { show(b.dataset.view); }); });
