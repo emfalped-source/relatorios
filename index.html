@@ -208,6 +208,8 @@ details.mais[open] summary{margin-bottom:6px}
 .pill.ok{background:var(--leve-bg);color:var(--leve)}
 .pill.av{background:var(--media-bg);color:var(--media)}
 .aviso-folha{border:1px solid var(--media);background:var(--media-bg);border-radius:8px;padding:10px 14px;font-size:.9rem}
+#recorteFolha{display:flex;flex-direction:column;gap:6px}
+#recorteFolha img{width:100%;height:auto;border:1px solid var(--line);border-radius:6px;background:#fff}
 .aviso-folha ul{margin:6px 0 0;padding-left:18px}
 .chip.conferir span,.hab-row.conferir,.switch.conferir{outline:2px dashed var(--ochre);outline-offset:2px}
 .file-btn{position:relative;overflow:hidden}
@@ -283,6 +285,7 @@ details.mais[open] summary{margin-bottom:6px}
 
           <div class="sheet"><fieldset>
             <legend>Consideração do professor</legend>
+            <div id="recorteFolha" hidden></div>
             <label class="f"><span>Escreva com suas palavras (opcional)</span>
               <textarea id="f-consid" placeholder="Ex.: Ele melhorou muito depois que passou a sentar na frente e a usar o caderno quadriculado."></textarea></label>
             <p class="hint" style="margin:0">O app encaixa este texto nas considerações finais do relatório, indicando o seu componente.</p>
@@ -305,7 +308,7 @@ details.mais[open] summary{margin-bottom:6px}
       <div style="display:flex;flex-direction:column;gap:14px">
         <div class="sheet"><fieldset>
           <legend>Imprimir folhas</legend>
-          <p class="hint" style="margin:0">Gera uma folha com QR Code para cada estudante. O professor marca à caneta e depois fotografa aqui mesmo, e o app preenche a parte dele no relatório.</p>
+          <p class="hint" style="margin:0">Para o professor que prefere o papel. Gera uma folha com QR Code para cada estudante; o professor marca à caneta, escreve a consideração à mão e entrega à coordenação, que fotografa aqui e confere. O registro sai no nome do professor da folha.</p>
           <div class="grid">
             <label class="f"><span>Ano letivo</span><select id="p-ano"></select></label>
             <label class="f"><span>Período</span><select id="p-periodo"></select></label>
@@ -313,7 +316,7 @@ details.mais[open] summary{margin-bottom:6px}
           </div>
           <div class="grid">
             <label class="f"><span>Turma</span><select id="p-turma"></select></label>
-            <label class="f"><span>Nome do professor na folha</span><input type="text" id="p-prof"></label>
+            <label class="f"><span>Nome do professor (sai na folha e no relatório)</span><input type="text" id="p-prof" placeholder="Deixe em branco para ele escrever à mão"></label>
           </div>
           <div class="pick" id="p-pick" hidden>
             <div class="actions"><button type="button" class="btn small" id="p-todos">Marcar todos</button><button type="button" class="btn small" id="p-nenhum">Desmarcar todos</button><span class="status-msg" id="p-cont"></span></div>
@@ -1343,7 +1346,6 @@ var fila = [], filaSeq = 0, folhaAtual = null;
 function renderPick() {
   var t = $('#p-turma').value;
   if (!$('#p-turma').options.length || $('#p-turma').innerHTML !== $('#f-turma').innerHTML) { $('#p-turma').innerHTML = $('#f-turma').innerHTML; $('#p-turma').value = t; t = $('#p-turma').value; }
-  if (!$('#p-prof').value && SESS && SESS.eu) $('#p-prof').value = SESS.eu.nome || '';
   var lista = ESTUD.filter(function (e) { return e.turma === t; });
   $('#p-pick').hidden = !t;
   $('#p-lista').innerHTML = lista.map(function (e) {
@@ -1420,6 +1422,11 @@ function lerArquivos(files) {
           else { item = tmp; item.st = 'ok'; item.chave = k; item.paginas = {}; }
           item.cod = r.cod; item.est = est; item.comp = r.compNome; item.thumb = item.thumb || tmp.thumb;
           item.paginas[r.cod.pag] = r.valores; item.total = r.cod.tot;
+          if (r.recorte) {
+            var rc = document.createElement('canvas'); rc.width = r.recorte.width; rc.height = r.recorte.height;
+            rc.getContext('2d').putImageData(new ImageData(r.recorte.data, r.recorte.width, r.recorte.height), 0, 0);
+            item.recorte = rc.toDataURL('image/jpeg', 0.85);
+          }
           item.res = FolhaREL.interpretar(CFG_FOLHA, r.compNome, r.cod.anoEsc, item.paginas, {}, GRUPOS);
         });
       }).catch(function (e) { tmp.st = 'erro'; tmp.erro = e.message; });
@@ -1456,7 +1463,7 @@ $('#fila').addEventListener('click', function (e) {
 });
 
 function limparFolha() {
-  folhaAtual = null; $('#avisoFolha').hidden = true; $('#btn-folhas').hidden = true;
+  folhaAtual = null; $('#avisoFolha').hidden = true; $('#btn-folhas').hidden = true; $('#recorteFolha').hidden = true; $('#recorteFolha').innerHTML = '';
   [].forEach.call(document.querySelectorAll('.conferir'), function (x) { x.classList.remove('conferir'); });
 }
 function abrirDaFolha(f) {
@@ -1470,6 +1477,9 @@ function abrirDaFolha(f) {
     limparFolha(); folhaAtual = f;
     var r = FolhaREL.interpretar(CFG_FOLHA, f.comp, c.anoEsc, f.paginas, base, GRUPOS);
     preencherDados(r.dados);
+    if (c.prof) $('#f-prof').value = c.prof;
+    if (f.recorte) { $('#recorteFolha').innerHTML = '<span class="lbl">Escrito à mão na folha</span><img src="' + f.recorte + '" alt="Consideração escrita à mão na folha">' +
+      '<span class="hint">Digite o texto no campo abaixo. Se o espaço estiver em branco, o professor não escreveu nada.</span>'; $('#recorteFolha').hidden = false; }
     var marcados = [];
     r.alertas.forEach(function (a) {
       var el = null, s = a.sel;
@@ -1482,7 +1492,7 @@ function abrirDaFolha(f) {
     [].forEach.call(document.querySelectorAll('#habSec details.mais'), function (d) {
       if (d.querySelector('input:checked') || d.querySelector('.conferir')) d.open = true;
     });
-    var h = '<b>Marcações lidas da folha.</b> Confira as opções abaixo, escreva a sua consideração e toque em ' + (meu ? '"Salvar alterações"' : '"Salvar minha parte"') + '.';
+    var h = '<b>Marcações lidas da folha.</b> Confira as opções abaixo, digite a consideração escrita à mão (aparece no fim da tela), confira o nome do professor e toque em ' + (meu ? '"Salvar alterações"' : '"Salvar minha parte"') + '.';
     if (r.faltam.length) h += '<br>Faltou ler ' + (r.faltam.length === 1 ? 'a página ' : 'as páginas ') + joinPt(r.faltam.map(String)) + ' de ' + r.total + '. ' + (meu ? 'Os itens dessas páginas ficaram como estavam no seu registro.' : 'Os itens dessas páginas ficaram em branco.');
     if (r.alertas.length) h += '<ul>' + r.alertas.map(function (a) { return '<li>' + esc(a.rot) + ': ' + esc(a.motivo) + '</li>'; }).join('') + '</ul>' +
       '<div class="hint" style="margin-top:4px">Esses itens estão com contorno tracejado.</div>';

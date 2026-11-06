@@ -9,13 +9,13 @@
   var L = {
     W: 210, H: 297,
     mk: { s: 9, c: [[14, 14], [196, 14], [196, 283], [14, 283]] }, // TL, TR, BR, BL
-    qr: { x: 160, y: 21, s: 28 },
+    qr: { x: 157, y: 19, s: 31 },
     x0: 22, x1: 188, yMax: 279, box: 3.4,
     inicio1: 80, inicioN: 53
   };
   var COLS_H = [148, 162, 176]; // centros das colunas Consolidado / Em consolidação / Não consolidado
   var ESTADOS = ['c', 'e', 'n'];
-  var RH = 4.6; // altura de cada linha de opções
+  var RH = 4.3; // altura de cada linha de opções
 
   function quebra(t, n) {
     var pal = String(t).split(/\s+/), linhas = [], cur = '';
@@ -72,11 +72,11 @@
         };
         cab();
         itens.forEach(function (t, i) {
-          var rot = cfg.rotuloHab(t), ls = quebra(rot, 78), h = Math.max(5.2, ls.length * 3.4 + 1.8);
+          var rot = cfg.rotuloHab(t), ls = quebra(rot, 80), h = Math.max(4.6, ls.length * 3.3 + 1.4);
           if (y + h > L.yMax) { p++; y = L.inicioN; cab(); }
-          blocos.push({ p: p, t: 'linha', x: L.x0, y: y - 2.6, w: L.x1 - L.x0, h: h });
-          ls.forEach(function (l, k) { blocos.push({ p: p, t: 'txt', x: L.x0 + 1.5, y: y + 0.9 + k * 3.4 - (ls.length - 1) * 1.7 + (h - 5.2) / 2, s: l, f: 8 }); });
-          var cy = y + (h - 5.2) / 2;
+          blocos.push({ p: p, t: 'linha', x: L.x0, y: y - 2.3, w: L.x1 - L.x0, h: h });
+          ls.forEach(function (l, k) { blocos.push({ p: p, t: 'txt', x: L.x0 + 1.5, y: y + 0.9 + k * 3.3 - (ls.length - 1) * 1.65 + (h - 4.6) / 2, s: l, f: 7.8 }); });
+          var cy = y + (h - 4.6) / 2;
           ESTADOS.forEach(function (st, j) { caixa(COLS_H[j], cy, { t: 'h', a: a, ano: ano, i: i, st: st }, cfg.AREAS[a] + ': ' + rot); });
           y += h;
         });
@@ -91,35 +91,44 @@
         var ops = g.ops.map(function (o, i) { return { r: o[0], v: i }; });
         if (g.nenhum) ops.push({ r: g.nenhum, v: 'n' });
         var maior = Math.max.apply(0, ops.map(function (o) { return o.r.length; }));
-        var nc = maior <= 24 ? 4 : maior <= 33 ? 3 : 2, linhas = Math.ceil(ops.length / nc);
-        var h = 4.4 + linhas * RH + 2 + (primeiro ? 7.5 : 0);
+        var nc = maior <= 25 ? 4 : maior <= 33 ? 3 : 2, linhas = Math.ceil(ops.length / nc);
+        var h = 4 + linhas * RH + 1.6 + (primeiro ? 6.5 : 0);
         cabe(h);
-        if (primeiro) { if (y > L.inicioN) y += 1.5; blocos.push({ p: p, t: 'tit', x: L.x0, y: y, s: (si + 1) + '. ' + s.titulo.toUpperCase() }); y += 6; primeiro = false; }
+        if (primeiro) { if (y > L.inicioN) y += 1; blocos.push({ p: p, t: 'tit', x: L.x0, y: y, s: (si + 1) + '. ' + s.titulo.toUpperCase() }); y += 5.5; primeiro = false; }
         blocos.push({ p: p, t: 'grp', x: L.x0, y: y, s: g.rot + (g.ee ? ' (EE)' : ''), d: g.tipo === 'um' ? '(marque uma)' : '(marque quantas forem necessárias)' });
-        y += 4.4;
+        y += 4;
         var cw = (L.x1 - L.x0) / nc;
         ops.forEach(function (o, i) {
           var col = Math.floor(i / linhas), lin = i % linhas, cx = L.x0 + col * cw, cy = y + lin * RH;
           caixa(cx + 1.7, cy, { t: 'g', k: g.k, v: o.v }, g.rot + ': ' + o.r);
-          blocos.push({ p: p, t: 'txt', x: cx + 4.6, y: cy + 1.1, s: o.r, f: 8 });
+          blocos.push({ p: p, t: 'txt', x: cx + 4.3, y: cy + 1.1, s: o.r, f: nc === 4 && maior > 22 ? 7 : 7.6 });
         });
-        y += linhas * RH + 2;
+        y += linhas * RH + 1.6;
       });
     });
-    // Consideração: o professor digita no app
-    cabe(10);
-    blocos.push({ p: p, t: 'tit', x: L.x0, y: y + 2, s: (cfg.SECOES.length + 1) + '. CONSIDERAÇÃO PESSOAL' });
-    blocos.push({ p: p, t: 'txt', x: L.x0, y: y + 7, s: 'Escreva no aplicativo, ao conferir a leitura desta folha.', f: 8, i: 1 });
-    return { paginas: p, blocos: blocos, caixas: caixas };
+    // Consideração pessoal: linhas para escrever à mão. O app mostra o recorte da foto para o professor digitar.
+    var NL = 6, LH = 7, hc = 11 + NL * LH;
+    cabe(hc);
+    y += 2;
+    blocos.push({ p: p, t: 'tit', x: L.x0, y: y, s: (cfg.SECOES.length + 1) + '. CONSIDERAÇÃO PESSOAL DO PROFESSOR' });
+    blocos.push({ p: p, t: 'txt', x: L.x0, y: y + 4.5, s: 'Escreva com suas palavras uma observação sobre o estudante (opcional). Use letra legível: a coordenação vai digitar este texto.', f: 7.6, i: 1 });
+    var y0 = y + 7;
+    for (var i = 1; i <= NL; i++) blocos.push({ p: p, t: 'risco', x: L.x0, y: y0 + i * LH, w: L.x1 - L.x0 });
+    var consid = { p: p, x: L.x0 - 1, y: y0, w: L.x1 - L.x0 + 2, h: NL * LH + 2 };
+    y = y0 + NL * LH + 3;
+    return { paginas: p, blocos: blocos, caixas: caixas, consid: consid };
   }
 
   // ===== QR =====
-  function codigoQR(o) { return ['EMFALREL', VERSAO, o.est, o.ano, o.per, o.comp, o.anoEsc || 0, o.pag, o.tot].join(';'); }
+  // o nome vai codificado (com acentos preservados) para o QR ficar só com caracteres simples
+  function codNome(t) { return encodeURIComponent(String(t || '').replace(/\s+/g, ' ').trim().slice(0, 32)); }
+  function decNome(t) { try { return decodeURIComponent(t || ''); } catch (e) { return ''; } }
+  function codigoQR(o) { return ['EMFALREL', VERSAO, o.est, o.ano, o.per, o.comp, o.anoEsc || 0, o.pag, o.tot, codNome(o.prof)].join(';'); }
   function lerCodigo(t) {
     var s = String(t || '').split(';');
     if (s[0] !== 'EMFALREL') return null;
-    if (s.length !== 9 || s[1] !== VERSAO) return { erro: 'versao' };
-    return { est: s[2], ano: s[3], per: Number(s[4]), comp: Number(s[5]), anoEsc: Number(s[6]) || 0, pag: Number(s[7]), tot: Number(s[8]) };
+    if (s.length !== 10 || s[1] !== VERSAO) return { erro: 'versao' };
+    return { est: s[2], ano: s[3], per: Number(s[4]), comp: Number(s[5]), anoEsc: Number(s[6]) || 0, pag: Number(s[7]), tot: Number(s[8]), prof: decNome(s[9]) };
   }
 
   // ===== PDF =====
@@ -136,8 +145,8 @@
         primeira = false;
         doc.setTextColor(0); doc.setDrawColor(0); doc.setFillColor(0);
         L.mk.c.forEach(function (c) { doc.rect(c[0] - L.mk.s / 2, c[1] - L.mk.s / 2, L.mk.s, L.mk.s, 'F'); });
-        var q = qrcode(0, 'M');
-        q.addData(codigoQR({ est: e.id, ano: ctx.ano, per: ctx.per, comp: ctx.comp, anoEsc: e.anoEsc, pag: pg, tot: tot })); q.make();
+        var q = qrcode(0, 'L');
+        q.addData(codigoQR({ est: e.id, ano: ctx.ano, per: ctx.per, comp: ctx.comp, anoEsc: e.anoEsc, pag: pg, tot: tot, prof: ctx.professor })); q.make();
         var m = q.getModuleCount(), ms = L.qr.s / m;
         for (var r = 0; r < m; r++) for (var c = 0; c < m; c++)
           if (q.isDark(r, c)) doc.rect(L.qr.x + c * ms, L.qr.y + r * ms, ms + 0.02, ms + 0.02, 'F');
@@ -151,8 +160,8 @@
           doc.text(cortar(doc, 'Componente ou função: ' + ctx.compNome, 134), L.x0, 59.5);
           doc.text(cortar(doc, 'Professor(a): ' + (ctx.professor || '______________________________'), 134), L.x0, 64.5);
           doc.setFontSize(7.8); doc.setTextColor(40);
-          doc.text('Marque com um X bem forte dentro do quadrinho, com caneta azul ou preta. Para desfazer, pinte o quadrinho inteiro e avise ao conferir no app.', L.x0, 70.5);
-          doc.text('Não dobre a folha e não escreva perto dos quadrados pretos. Fotografe ' + (tot > 1 ? 'todas as páginas (frente e verso)' : 'a página inteira') + ' no app Relatórios EMFAL, na aba Folhas.', L.x0, 74);
+          doc.text('Marque com um X bem forte dentro do quadrinho, com caneta azul ou preta. Se marcar errado, risque a linha ao lado e avise a coordenação ao entregar.', L.x0, 70.5);
+          doc.text('Não dobre a folha e não escreva perto dos quadrados pretos. Ao terminar, entregue ' + (tot > 1 ? 'todas as páginas' : 'a folha') + ' à coordenação pedagógica.', L.x0, 74);
           doc.setTextColor(0);
         } else {
           doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
@@ -178,6 +187,7 @@
     bs.forEach(function (b) {
       if (b.t === 'box') { doc.setDrawColor(0); doc.setLineWidth(0.3); doc.rect(b.x - L.box / 2, b.y - L.box / 2, L.box, L.box, 'S'); }
       else if (b.t === 'faixa') { doc.setFillColor(242, 242, 242); doc.setDrawColor(0); doc.setLineWidth(0.2); doc.rect(b.x, b.y, b.w, b.h, 'FD'); doc.setFillColor(0); }
+      else if (b.t === 'risco') { doc.setDrawColor(120); doc.setLineWidth(0.2); doc.line(b.x, b.y, b.x + b.w, b.y); doc.setDrawColor(0); }
       else if (b.t === 'linha') { doc.setDrawColor(190); doc.setLineWidth(0.15); doc.line(b.x, b.y + b.h, b.x + b.w, b.y + b.h); doc.setDrawColor(0); }
       else if (b.t === 'txt') {
         doc.setFont('helvetica', b.b ? 'bold' : b.i ? 'italic' : 'normal'); doc.setFontSize(b.f || 8); doc.text(b.s, b.x, b.y);
@@ -305,6 +315,22 @@
     return esc / tot;
   }
 
+  // Recorta e endireita um retângulo da folha (em mm) a partir da foto. pxmm = pixels por milímetro.
+  function recortar(img, H, r, pxmm) {
+    var W = Math.round(r.w * pxmm), Hh = Math.round(r.h * pxmm), out = new Uint8ClampedArray(W * Hh * 4), d = img.data, w = img.width, h = img.height;
+    for (var j = 0; j < Hh; j++) for (var i = 0; i < W; i++) {
+      var p = aplicar(H, r.x + i / pxmm, r.y + j / pxmm), x = p[0], yy = p[1], o = (j * W + i) * 4;
+      var x0 = Math.floor(x), y0 = Math.floor(yy), fx = x - x0, fy = yy - y0;
+      if (x0 < 0 || y0 < 0 || x0 + 1 >= w || y0 + 1 >= h) { out[o] = out[o + 1] = out[o + 2] = 255; out[o + 3] = 255; continue; }
+      for (var c = 0; c < 3; c++) {
+        var a = d[(y0 * w + x0) * 4 + c], b2 = d[(y0 * w + x0 + 1) * 4 + c], e = d[((y0 + 1) * w + x0) * 4 + c], f = d[((y0 + 1) * w + x0 + 1) * 4 + c];
+        out[o + c] = (a * (1 - fx) + b2 * fx) * (1 - fy) + (e * (1 - fx) + f * fx) * fy;
+      }
+      out[o + 3] = 255;
+    }
+    return { data: out, width: W, height: Hh };
+  }
+
   var MARCA = 0.25, DUVIDA = 0.08;
   /* Lê uma página. Devolve {ok, erro, cod, valores:[fração por caixa da página]} */
   function lerPagina(img, jsQR, cfg, compNomes) {
@@ -333,7 +359,8 @@
     if (!H || menor > 12 * escala) return { ok: false, erro: 'A folha parece dobrada ou muito inclinada. Tente outra foto, de frente.', cod: cod };
     var lay = layout(cfg, compNome, cod.anoEsc);
     var cxs = lay.caixas.filter(function (c) { return c.p === cod.pag; });
-    return { ok: true, cod: cod, compNome: compNome, valores: cxs.map(function (c) { return miolo(b, w, h, H, c.x, c.y); }) };
+    var rec = lay.consid && lay.consid.p === cod.pag ? recortar(img, H, lay.consid, 6) : null;
+    return { ok: true, cod: cod, compNome: compNome, valores: cxs.map(function (c) { return miolo(b, w, h, H, c.x, c.y); }), recorte: rec };
   }
 
   /* Junta as páginas lidas de um mesmo estudante e devolve o que vai para o formulário do app.
