@@ -1083,10 +1083,44 @@ function renderRList() {
 $('#rList').addEventListener('click', function (e) {
   var b = e.target.closest('button[data-rest]'); if (!b) return;
   var est = ESTPOR[b.dataset.rest], ano = $('#r-ano').value, per = $('#r-periodo').value;
-  var cs = contribsDe(est.id, ano, per);
-  if (!cs.length && !EDICOES[chaveEd(est.id, ano, per)]) { $('#r-det').hidden = false; $('#r-det').innerHTML = '<p style="margin:0"><b>' + esc(nomeBonito(est.nome)) + '</b> ainda não tem registros em ' + esc(per) + ' de ' + esc(ano) + '.</p>'; return; }
-  abrirRelatorio(est, ano, per, 'relatorios');
+  [].forEach.call($('#rList').querySelectorAll('button[data-rest]'), function (x) { x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); });
+  renderHistorico(est, ano, per);
 });
+// Histórico do estudante: todos os anos e períodos com registros ou relatório salvo
+function historicoDe(estId) {
+  var h = {};
+  INDICE.forEach(function (c) {
+    if (c.estudanteId !== estId) return;
+    var k = c.anoLetivo + '|' + c.periodo; (h[k] = h[k] || { ano: c.anoLetivo, per: c.periodo, comps: [], ed: null }).comps.push(c.componente);
+  });
+  Object.keys(EDICOES).forEach(function (k) {
+    var e = EDICOES[k]; if (e.estudanteId !== estId) return;
+    var kk = e.anoLetivo + '|' + e.periodo; (h[kk] = h[kk] || { ano: e.anoLetivo, per: e.periodo, comps: [], ed: null }).ed = e;
+  });
+  return Object.keys(h).map(function (k) { return h[k]; }).sort(function (a, b) {
+    return a.ano !== b.ano ? (a.ano < b.ano ? 1 : -1) : PERIODOS.indexOf(b.per) - PERIODOS.indexOf(a.per);
+  });
+}
+function renderHistorico(est, ano, per) {
+  var h = historicoDe(est.id), box = $('#r-det');
+  box.hidden = false;
+  if (!h.length) { box.innerHTML = '<p style="margin:0"><b>' + esc(nomeBonito(est.nome)) + '</b> ainda não tem relatórios no histórico.</p>'; return; }
+  box.innerHTML = '<fieldset><legend>Histórico de ' + esc(nomeBonito(est.nome)) + '</legend>' +
+    '<p class="hint" style="margin:0 0 8px">Relatórios do estudante em todos os períodos. Toque em um para abrir.</p>' +
+    '<div class="est-list" style="max-height:none">' + h.map(function (x) {
+      var info = [];
+      if (x.comps.length) info.push(x.comps.length + (x.comps.length > 1 ? ' registros' : ' registro'));
+      if (x.ed) info.push('relatório salvo');
+      var atualP = x.ano === ano && x.per === per;
+      return '<button type="button" data-hano="' + esc(x.ano) + '" data-hper="' + esc(x.per) + '"' + (atualP ? ' aria-pressed="true"' : '') + '><span>' + esc(x.per) + ' de ' + esc(x.ano) +
+        '</span><span class="badge' + (x.comps.length ? ' mine' : '') + '">' + esc(info.join(' · ')) + '</span></button>';
+    }).join('') + '</div></fieldset>';
+  box.querySelector('.est-list').addEventListener('click', function (ev) {
+    var bt = ev.target.closest('button[data-hano]'); if (!bt) return;
+    abrirRelatorio(est, bt.dataset.hano, bt.dataset.hper, 'relatorios');
+  });
+  box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
 
 // ---------- montagem do texto ----------
 var G = { o: 'o', O: 'O', do: 'do', ao: 'ao' };
