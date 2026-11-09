@@ -366,12 +366,16 @@ details.mais[open] summary{margin-bottom:6px}
               <select id="d-gen"><option value="o">o estudante</option><option value="a">a estudante</option></select></label>
             <label class="f"><span>Data do relatório</span><input type="date" id="d-data"></label>
           </div>
-          <p class="hint" style="margin:0">Você pode corrigir o texto direto na folha abaixo antes de imprimir ou baixar. Mudar as opções acima refaz o texto.</p>
+          <div class="aviso-folha" id="d-edinfo" hidden></div>
+          <p class="hint" style="margin:0">Toque no texto da folha abaixo para corrigir ou acrescentar o que quiser e depois em <b>Salvar edição</b>. A versão salva abre para todos que têm acesso ao estudante, em qualquer aparelho. Mudar o tratamento (o/a) refaz o texto a partir dos registros.</p>
           <div class="actions">
             <button class="btn" id="btn-voltar" type="button">Voltar</button>
-            <button class="btn primary" id="btn-imprimir" type="button">Imprimir</button>
+            <button class="btn primary" id="btn-saled" type="button">Salvar edição</button>
+            <button class="btn" id="btn-imprimir" type="button">Imprimir</button>
             <button class="btn" id="btn-baixar" type="button">Baixar para Word</button>
             <button class="btn" id="btn-copiar" type="button">Copiar texto</button>
+            <button class="btn danger" id="btn-desced" type="button" hidden>Descartar edição</button>
+            <span class="status-msg" id="d-msg" role="status"></span>
           </div>
         </div>
         <div class="doc" id="doc" contenteditable="true" spellcheck="true"></div>
@@ -1068,10 +1072,10 @@ function renderRList() {
   if (!t) { $('#rList').innerHTML = '<button type="button" disabled style="color:var(--muted)">Escolha a turma.</button>'; $('#r-summary').innerHTML = ''; return; }
   var lista = ESTUD.filter(function (e) { return e.turma === t; }), com = 0;
   $('#rList').innerHTML = lista.map(function (e) {
-    var cs = contribsDe(e.id, ano, per); if (cs.length) com++;
+    var cs = contribsDe(e.id, ano, per), ed = EDICOES[chaveEd(e.id, ano, per)]; if (cs.length || ed) com++;
     var comps = cs.map(function (c) { return c.componente; });
     return '<button type="button" data-rest="' + esc(e.id) + '"><span>' + esc(nomeBonito(e.nome)) + '</span><span class="badge' + (cs.length ? ' mine' : '') + '">' +
-      (cs.length ? esc(cs.length + ' · ' + comps.slice(0, 3).join(', ') + (comps.length > 3 ? '…' : '')) : 'sem registros') + '</span></button>';
+      (cs.length ? esc(cs.length + ' · ' + comps.slice(0, 3).join(', ') + (comps.length > 3 ? '…' : '')) : 'sem registros') + (ed ? ' · editado' : '') + '</span></button>';
   }).join('');
   $('#r-summary').innerHTML = '<span><b>' + lista.length + '</b> estudantes</span><span><b>' + com + '</b> com registros em ' + esc(per) + '</span>';
 }
@@ -1080,7 +1084,7 @@ $('#rList').addEventListener('click', function (e) {
   var b = e.target.closest('button[data-rest]'); if (!b) return;
   var est = ESTPOR[b.dataset.rest], ano = $('#r-ano').value, per = $('#r-periodo').value;
   var cs = contribsDe(est.id, ano, per);
-  if (!cs.length) { $('#r-det').hidden = false; $('#r-det').innerHTML = '<p style="margin:0"><b>' + esc(nomeBonito(est.nome)) + '</b> ainda não tem registros em ' + esc(per) + ' de ' + esc(ano) + '.</p>'; return; }
+  if (!cs.length && !EDICOES[chaveEd(est.id, ano, per)]) { $('#r-det').hidden = false; $('#r-det').innerHTML = '<p style="margin:0"><b>' + esc(nomeBonito(est.nome)) + '</b> ainda não tem registros em ' + esc(per) + ' de ' + esc(ano) + '.</p>'; return; }
   abrirRelatorio(est, ano, per, 'relatorios');
 });
 
@@ -1258,27 +1262,100 @@ function montar(est, ano, per, contribs) {
 }
 
 // ---------- documento ----------
+// Relatórios com edição salva (chave estudante|ano|período), para a etiqueta "editado" na lista
+var EDICOES = {};
+function chaveEd(id, ano, per) { return [id, ano, per].join('|'); }
+function carregarEdicoes() {
+  return api('indiceEdicoes').then(function (l) {
+    EDICOES = {}; (l || []).forEach(function (e) { EDICOES[e.chave] = e; });
+    if (view === 'relatorios') renderRList();
+  }).catch(function () {});
+}
+
 function abrirRelatorio(est, ano, per, voltar) {
-  chamar('Juntando os registros…', 'contribuicoes', est.id, ano, per).then(function (cs) {
-    if (!cs.length) { toast('Ainda não há registros deste estudante neste período.'); return; }
+  carga(true, 'Juntando os registros…');
+  Promise.all([
+    api('contribuicoes', est.id, ano, per),
+    api('edicao', est.id, ano, per).catch(function () { return null; })
+  ]).then(function (res) {
+    carga(false);
+    var cs = res[0], ed = res[1];
+    if (!cs.length && !ed) { toast('Ainda não há registros deste estudante neste período.'); return; }
     var pn = norm(primeiroNome(est));
-    $('#d-gen').value = /a$/.test(pn) && !/^(luca|joshua|nicola|batista|elias)$/.test(pn) ? 'a' : 'o';
-    if (!$('#d-data').value) $('#d-data').value = todayISO();
-    docCtx = { est: est, ano: ano, per: per, contribs: cs, voltar: voltar };
-    renderDoc(); show('doc'); window.scrollTo(0, 0);
-  }).catch(function (err) { toast(err.message); });
+    $('#d-gen').value = ed ? ed.genero : (/a$/.test(pn) && !/^(luca|joshua|nicola|batista|elias)$/.test(pn) ? 'a' : 'o');
+    $('#d-data').value = (ed && ed.data) || $('#d-data').value || todayISO();
+    docCtx = { est: est, ano: ano, per: per, contribs: cs, voltar: voltar, edicao: ed, sujo: false };
+    if (ed && ed.blocos && ed.blocos.length) renderBlocos(ed.blocos); else renderDoc();
+    infoEdicao(); show('doc'); window.scrollTo(0, 0);
+  }).catch(function (err) { carga(false); toast(err.message); });
+}
+function setG() {
+  G = $('#d-gen').value === 'a' ? { o: 'a', O: 'A', do: 'da', ao: 'à' } : { o: 'o', O: 'O', do: 'do', ao: 'ao' };
 }
 function renderDoc() {
-  var g = $('#d-gen').value;
-  G = g === 'a' ? { o: 'a', O: 'A', do: 'da', ao: 'à' } : { o: 'o', O: 'O', do: 'do', ao: 'ao' };
+  setG();
   var r = montar(docCtx.est, docCtx.ano, docCtx.per, docCtx.contribs);
   docCtx.r = r;
   $('#doc').innerHTML = '<div class="head" contenteditable="false">' + HEADER.map(esc).join('<br>') + '</div><h2>' + esc(r.titulo) + '</h2>' +
     r.secs.map(function (s) { return '<h3>' + esc(s.t) + '</h3>' + s.ps.map(function (p) { return '<p>' + esc(p) + '</p>'; }).join(''); }).join('') +
-    '<p style="text-align:right;margin-top:16px">Belo Horizonte, ' + esc(fmtLong($('#d-data').value || todayISO())) + '.</p>' +
+    '<p style="text-align:right;margin-top:16px">' + esc(linhaData()) + '</p>' +
     '<div class="sigs">' + r.sigs.map(function (s) { return '<div class="sig">' + esc(s) + '</div>'; }).join('') + '</div>';
 }
-['#d-gen', '#d-data'].forEach(function (s) { $(s).addEventListener('change', renderDoc); });
+function linhaData() { return 'Belo Horizonte, ' + fmtLong($('#d-data').value || todayISO()) + '.'; }
+// Remonta a folha a partir de uma edição salva
+function renderBlocos(bl) {
+  var corpo = '', sigs = '';
+  bl.forEach(function (b) {
+    if (b.tipo === 'titulo') corpo += '<h2>' + esc(b.txt) + '</h2>';
+    else if (b.tipo === 'secao') corpo += '<h3>' + esc(b.txt) + '</h3>';
+    else if (b.tipo === 'data') corpo += '<p style="text-align:right;margin-top:16px">' + esc(b.txt) + '</p>';
+    else if (b.tipo === 'sig') sigs += '<div class="sig">' + esc(b.txt) + '</div>';
+    else corpo += '<p>' + esc(b.txt) + '</p>';
+  });
+  $('#doc').innerHTML = '<div class="head" contenteditable="false">' + HEADER.map(esc).join('<br>') + '</div>' + corpo +
+    (sigs ? '<div class="sigs">' + sigs + '</div>' : '');
+}
+function infoEdicao() {
+  var ed = docCtx.edicao, box = $('#d-edinfo');
+  $('#btn-desced').hidden = !ed; $('#d-msg').textContent = '';
+  if (!ed) { box.hidden = true; return; }
+  var depois = docCtx.contribs.filter(function (c) { return String(c.atualizadoEm || '') > String(ed.atualizadoEm || ''); })
+    .map(function (c) { return c.componente; });
+  box.innerHTML = 'Esta é a <b>versão editada</b>, salva por ' + esc(ed.nome || ed.usuario) + ' em ' + esc(fmtCurto(ed.atualizadoEm)) + '.' +
+    (depois.length ? '<br>Atenção: houve registros alterados depois desta edição (' + esc(joinPt(depois)) + '). Eles não aparecem neste texto. Para incluí-los, use <b>Descartar edição</b> e edite de novo, ou acrescente à mão.' : '');
+  box.hidden = false;
+}
+function marcarSujo() { if (!docCtx) return; docCtx.sujo = true; $('#d-msg').textContent = 'Alterações ainda não salvas.'; }
+$('#doc').addEventListener('input', marcarSujo);
+$('#d-gen').addEventListener('change', function () { renderDoc(); marcarSujo(); });
+$('#d-data').addEventListener('change', function () {
+  var ps = $('#doc').querySelectorAll('p'), feito = false;
+  [].forEach.call(ps, function (p) { if (!feito && p.style.textAlign === 'right') { p.textContent = linhaData(); feito = true; } });
+  if (!feito) renderDoc();
+  marcarSujo();
+});
+$('#btn-saled').addEventListener('click', function () {
+  if (!docCtx) return;
+  var e = { estudanteId: docCtx.est.id, estudante: docCtx.est.nome, turma: docCtx.est.turma, anoLetivo: docCtx.ano, periodo: docCtx.per,
+    genero: $('#d-gen').value, data: $('#d-data').value, blocos: blocosDaFolha() };
+  chamar('Salvando a edição…', 'salvarEdicao', e).then(function (ed) {
+    docCtx.edicao = ed; docCtx.sujo = false; EDICOES[chaveEd(ed.estudanteId, ed.anoLetivo, ed.periodo)] = ed;
+    infoEdicao(); toast('Edição salva');
+  }).catch(function (err) {
+    $('#d-msg').textContent = /desconhecida/.test(err.message) ? 'O servidor ainda não foi atualizado para salvar edições.' : err.message;
+  });
+});
+$('#btn-desced').addEventListener('click', function () {
+  var bt = this;
+  if (bt.dataset.conf !== '1') { bt.dataset.conf = '1'; bt.textContent = 'Toque de novo para descartar'; setTimeout(function () { bt.dataset.conf = ''; bt.textContent = 'Descartar edição'; }, 4000); return; }
+  bt.dataset.conf = ''; bt.textContent = 'Descartar edição';
+  chamar('Descartando…', 'descartarEdicao', docCtx.est.id, docCtx.ano, docCtx.per).then(function () {
+    delete EDICOES[chaveEd(docCtx.est.id, docCtx.ano, docCtx.per)];
+    docCtx.edicao = null; docCtx.sujo = false;
+    if (!docCtx.contribs.length) { toast('Edição descartada'); show(docCtx.voltar); return; }
+    renderDoc(); infoEdicao(); toast('Edição descartada. O texto voltou a ser montado pelos registros.');
+  }).catch(function (err) { toast(err.message); });
+});
 
 // Lê o que está na folha (com as correções feitas à mão)
 function blocosDaFolha() {
@@ -1316,7 +1393,17 @@ function wordFile() {
     corpo + sigs +
     '<div style="mso-element:footer" id=f1><p class=MsoFooter>Página <span style="mso-field-code:\' PAGE \'"></span></p></div></div></body></html>';
 }
-$('#btn-voltar').addEventListener('click', function () { show(docCtx ? docCtx.voltar : 'preencher'); });
+$('#btn-voltar').addEventListener('click', function () {
+  var bt = this;
+  if (docCtx && docCtx.sujo && bt.dataset.conf !== '1') {
+    bt.dataset.conf = '1'; bt.textContent = 'Sair sem salvar?';
+    $('#d-msg').textContent = 'Há alterações não salvas. Toque em Salvar edição ou toque de novo em Voltar para sair sem salvar.';
+    setTimeout(function () { bt.dataset.conf = ''; bt.textContent = 'Voltar'; }, 4000); return;
+  }
+  bt.dataset.conf = ''; bt.textContent = 'Voltar';
+  if (docCtx) docCtx.sujo = false;
+  show(docCtx ? docCtx.voltar : 'preencher');
+});
 $('#btn-imprimir').addEventListener('click', function () { window.print(); });
 $('#btn-copiar').addEventListener('click', function () {
   var txt = textoPuro();
@@ -1513,7 +1600,13 @@ function show(v) {
   if (v === 'folhas') { renderPick(); renderFila(); }
   topo();
 }
-[].forEach.call(document.querySelectorAll('nav.tabs button'), function (b) { b.addEventListener('click', function () { show(b.dataset.view); }); });
+[].forEach.call(document.querySelectorAll('nav.tabs button'), function (b) { b.addEventListener('click', function () {
+  if (view === 'doc' && docCtx && docCtx.sujo && b.dataset.conf !== '1') {
+    b.dataset.conf = '1'; setTimeout(function () { b.dataset.conf = ''; }, 4000);
+    toast('Há alterações não salvas no relatório. Toque de novo para sair sem salvar.'); return;
+  }
+  b.dataset.conf = ''; if (docCtx) docCtx.sujo = false; show(b.dataset.view);
+}); });
 
 function topo() {
   var u = $('#topUser');
@@ -1524,7 +1617,7 @@ function topo() {
   $('#btnAtualizar').onclick = carregarTudo;
 }
 function toastOuAlerta(m) { if (typeof toast === 'function') toast(m); else alert(m); }
-function sairLocal() { SESS = null; lsSet(CHAVE, null); INDICE = []; ESTUD = []; ESTPOR = {}; atual = null; meu = null; }
+function sairLocal() { EDICOES = {}; SESS = null; lsSet(CHAVE, null); INDICE = []; ESTUD = []; ESTPOR = {}; atual = null; meu = null; }
 
 $('#loginForm').addEventListener('submit', function (e) {
   e.preventDefault();
@@ -1548,7 +1641,7 @@ $('#loginForm').addEventListener('submit', function (e) {
 
 function carregarTudo() {
   chamar('Carregando turmas e registros…', 'iniciar').then(function (d) {
-    $('#conn').hidden = true; setDados(d);
+    $('#conn').hidden = true; setDados(d); carregarEdicoes();
     if (d.eu) { SESS.eu = d.eu; lsSet(CHAVE, JSON.stringify(SESS)); }
     show(view === 'login' || view === 'doc' ? 'preencher' : view);
   }).catch(function (err) {
