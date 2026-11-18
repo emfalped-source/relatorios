@@ -367,6 +367,7 @@ details.mais[open] summary{margin-bottom:6px}
             <label class="f"><span>Data do relatório</span><input type="date" id="d-data"></label>
           </div>
           <div class="aviso-folha" id="d-edinfo" hidden></div>
+          <div class="aviso-folha" id="d-corrigir" hidden></div>
           <p class="hint" style="margin:0">Toque no texto da folha abaixo para corrigir ou acrescentar o que quiser e depois em <b>Salvar edição</b>. A versão salva abre para todos que têm acesso ao estudante, em qualquer aparelho. Mudar o tratamento (o/a) refaz o texto a partir dos registros.</p>
           <div class="actions">
             <button class="btn" id="btn-voltar" type="button">Voltar</button>
@@ -1004,14 +1005,17 @@ function renderEstList() {
   }).join('') : '<button type="button" disabled style="color:var(--muted)">Nenhum estudante encontrado.</button>';
 }
 
-function abrirEstudante(depois) {
+// idAlvo: abre um registro específico (para corrigir marcações, inclusive o de outro professor, se for a coordenação)
+function abrirEstudante(depois, idAlvo) {
   var f = filtroAtual();
   if (typeof depois !== 'function') { depois = null; limparFolha(); }
+  $('#f-prof').readOnly = false;
   if (!atual) { $('#corpo').hidden = true; return; }
   if (!f.comp) { $('#corpo').hidden = true; $('#form-msg').textContent = ''; toast('Escolha o componente ou a função antes.'); $('#f-comp').focus(); return; }
-  lsSet('relatorios_comp', f.comp);
+  if (!idAlvo) lsSet('relatorios_comp', f.comp);
   var cs = contribsDe(atual.id, f.ano, f.per);
-  var minha = cs.filter(function (c) { return c.usuario === SESS.eu.usuario && c.componente === f.comp; })[0];
+  var minha = idAlvo ? cs.filter(function (c) { return c.id === idAlvo; })[0] :
+    cs.filter(function (c) { return c.usuario === SESS.eu.usuario && c.componente === f.comp; })[0];
   var outros = cs.filter(function (c) { return c !== minha; });
   $('#alvo').innerHTML = '<div><b>' + esc(nomeBonito(atual.nome)) + '</b><div class="hint">' + esc(turmaNome(atual.turma)) + ' · ' + esc(f.per) + ' de ' + esc(f.ano) + ' · ' + esc(f.comp) + '</div></div>' +
     '<div class="prog">' + (outros.length ? outros.map(function (c) { return '<span class="pill">' + esc(c.componente) + '</span>'; }).join('') : '<span class="hint">Nenhum outro professor registrou ainda.</span>') + '</div>';
@@ -1022,6 +1026,9 @@ function abrirEstudante(depois) {
     meu = lista.filter(function (c) { return c.id === minha.id; })[0] || null;
     preencherDados(meu ? meu.dados : {}); $('#f-consid').value = meu ? meu.consideracao : '';
     if (meu && meu.professor) $('#f-prof').value = meu.professor;
+    var deOutro = !!(meu && meu.usuario !== SESS.eu.usuario);
+    $('#f-prof').readOnly = deOutro;
+    if (deOutro) $('#alvo').insertAdjacentHTML('beforeend', '<div class="hint" style="flex-basis:100%"><b>Corrigindo o registro de ' + esc(meu.professor || meu.usuario) + '.</b> Mude as opções erradas e toque em "Salvar alterações". O registro continua no nome dele.</div>');
     $('#btn-apagar').hidden = !meu; $('#btn-salvar').textContent = meu ? 'Salvar alterações' : 'Salvar minha parte';
     if (depois) depois(meu ? meu.dados : {});
   }).catch(function (err) { toast(err.message); });
@@ -1050,7 +1057,9 @@ $('#form').addEventListener('submit', function (e) {
     setDados(res); meu = res.salvo; if (dados.ee) EECACHE[atual.id + '|' + f.ano + '|' + f.per] = 1;
     toast('Sua parte foi salva'); $('#btn-apagar').hidden = false; $('#btn-salvar').textContent = 'Salvar alterações';
     if (folhaAtual) { folhaAtual.salvo = true; renderFila(); }
-    $('#form-msg').textContent = 'Salvo. Você pode abrir o relatório do estudante ou escolher outro nome na lista.';
+    $('#form-msg').textContent = EDICOES[chaveEd(atual.id, f.ano, f.per)] ?
+      'Salvo. Atenção: este relatório tem uma versão editada salva. Ao abrir o relatório, toque em "Descartar edição" para o texto ser refeito com a correção, ou corrija o texto à mão.' :
+      'Salvo. Toque em "Ver relatório do estudante" para conferir o texto corrigido.';
     renderEstList();
   }).catch(function (err) { $('#form-msg').textContent = err.message; if (!SESS) show('login'); });
 });
@@ -1351,6 +1360,7 @@ function renderBlocos(bl) {
 }
 function infoEdicao() {
   var ed = docCtx.edicao, box = $('#d-edinfo');
+  renderCorrigir();
   $('#btn-desced').hidden = !ed; $('#d-msg').textContent = '';
   if (!ed) { box.hidden = true; return; }
   var depois = docCtx.contribs.filter(function (c) { return String(c.atualizadoEm || '') > String(ed.atualizadoEm || ''); })
@@ -1359,6 +1369,36 @@ function infoEdicao() {
     (depois.length ? '<br>Atenção: houve registros alterados depois desta edição (' + esc(joinPt(depois)) + '). Eles não aparecem neste texto. Para incluí-los, use <b>Descartar edição</b> e edite de novo, ou acrescente à mão.' : '');
   box.hidden = false;
 }
+// Corrigir marcações: reabre o registro de um componente no Preencher, já carregado
+function podeCorrigir(c) { return !!(SESS && SESS.eu && (c.usuario === SESS.eu.usuario || ehCoord())); }
+function renderCorrigir() {
+  var box = $('#d-corrigir'), cs = ((docCtx && docCtx.contribs) || []).filter(podeCorrigir);
+  if (!cs.length) { box.hidden = true; box.innerHTML = ''; return; }
+  box.innerHTML = '<b>Alguma opção foi marcada errada?</b> Toque no registro para reabrir as marcações, corrigir e salvar de novo.' +
+    '<div class="actions" style="margin-top:8px">' + cs.map(function (c) {
+      var quem = c.usuario !== SESS.eu.usuario && c.professor ? ' (' + c.professor + ')' : '';
+      return '<button type="button" class="btn small" data-corr="' + esc(c.id) + '">Corrigir ' + esc(c.componente + quem) + '</button>';
+    }).join('') + '</div>' +
+    (docCtx.edicao ? '<div class="hint" style="margin-top:6px">Este relatório tem versão editada salva. Depois de corrigir, toque em <b>Descartar edição</b> para o texto ser refeito com as marcações novas, ou ajuste o texto à mão.</div>' : '');
+  box.hidden = false;
+}
+function setSel(s, v) {
+  var el = $(s); el.value = v;
+  if (el.value !== v) { el.insertAdjacentHTML('beforeend', '<option value="' + esc(v) + '">' + esc(v) + '</option>'); el.value = v; }
+}
+$('#d-corrigir').addEventListener('click', function (e) {
+  var b = e.target.closest('button[data-corr]'); if (!b || !docCtx) return;
+  if (docCtx.sujo && b.dataset.conf !== '1') {
+    b.dataset.conf = '1'; setTimeout(function () { b.dataset.conf = ''; }, 4000);
+    toast('Há alterações não salvas no texto. Toque de novo para sair sem salvar.'); return;
+  }
+  var c = docCtx.contribs.filter(function (x) { return x.id === b.dataset.corr; })[0]; if (!c) return;
+  var est = docCtx.est; docCtx.sujo = false;
+  setSel('#f-ano', c.anoLetivo); setSel('#f-periodo', c.periodo); setSel('#f-comp', c.componente); setSel('#f-turma', est.turma);
+  $('#f-busca').value = ''; atual = est; show('preencher');
+  abrirEstudante(null, c.id);
+  setTimeout(function () { if (!$('#corpo').hidden) $('#alvo').scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 300);
+});
 function marcarSujo() { if (!docCtx) return; docCtx.sujo = true; $('#d-msg').textContent = 'Alterações ainda não salvas.'; }
 $('#doc').addEventListener('input', marcarSujo);
 $('#d-gen').addEventListener('change', function () { renderDoc(); marcarSujo(); });
