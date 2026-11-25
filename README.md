@@ -10,4 +10,4 @@ Relatórios de desenvolvimento dos estudantes da Escola Municipal Francisca Alve
 - Histórico do estudante: na aba Relatórios, ao tocar no nome do estudante aparecem todos os períodos e anos com registros ou relatório salvo, inclusive relatórios antigos importados (salvos como versão editada do período).
 - Os registros ficam numa planilha do Google Drive da escola, nunca neste repositório.
 
-Endereço: https://emfalpbh.github.io/relatorios/
+Endereço: https://emfalped-source.github.io/relatorios/
