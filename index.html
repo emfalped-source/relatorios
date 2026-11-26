@@ -68,6 +68,7 @@ label.f span,.lbl{font-size:.74rem;font-weight:600;letter-spacing:.06em;text-tra
 input[type=text],input[type=date],select,textarea{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:9px 11px;width:100%;min-width:0}
 textarea{min-height:130px;resize:vertical;line-height:1.55}
 input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--focus);outline-offset:1px;border-color:transparent}
+.btn:disabled{opacity:.45;cursor:not-allowed}
 .hint{font-size:.8rem;color:var(--muted)}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
 .chip{position:relative}
@@ -373,6 +374,8 @@ input[type=password]{font:inherit;color:var(--ink);background:var(--bg);border:1
           <div class="grid">
             <label class="f"><span>Como tratar no texto</span>
               <select id="d-gen"><option value="o">o estudante</option><option value="a">a estudante</option></select></label>
+            <label class="f"><span>Para quem é o relatório</span>
+              <select id="d-dest"><option value="int">Uso interno da escola (completo)</option><option value="ext">Família ou outra instituição (sem informações reservadas)</option></select></label>
             <label class="f"><span>Data do relatório</span><input type="date" id="d-data"></label>
           </div>
           <div class="aviso-folha" id="d-edinfo" hidden></div>
@@ -399,7 +402,7 @@ input[type=password]{font:inherit;color:var(--ink);background:var(--bg);border:1
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
-<script src="folha.js?v=20261106b"></script>
+<script src="folha.js?v=20261126"></script>
 <script>
 'use strict';
 var API_URL = 'https://script.google.com/macros/s/AKfycbzCbPfrmF1AZhXP2xh0Se-mMQUJlWqbTkCZ8doxeNOsn5XHBE-2YMW-M6T4_R3BtBrF/exec';
@@ -443,6 +446,49 @@ var SECOES = [
       ['Boa convivência', 'relaciona-se bem com colegas e professores'],
       ['Conflitos ocasionais', 'apresenta conflitos ocasionais na convivência com os colegas'],
       ['Conflitos frequentes', 'apresenta dificuldades frequentes de convivência, que demandam acompanhamento']] }
+  ] },
+  /* v2: o lado humano. Grupos com res:1 são reservados: saem do texto quando a versão é para a família ou outra instituição. */
+  { id: 'ctx', v2: 1, titulo: 'Vínculos, bem-estar e contexto de vida', grupos: [
+    { k: 'vinc', tipo: 'varios', rot: 'Vínculos e o que mobiliza o estudante', ops: [
+      ['Gosta de vir à escola', 'demonstra gostar de vir à escola'],
+      ['Tem amigos na turma', 'mantém laços de amizade com colegas da turma'],
+      ['Confia em um adulto da escola', 'construiu vínculo de confiança com adultos da escola'],
+      ['Responde a elogio e incentivo', 'responde bem ao elogio e ao incentivo'],
+      ['Gosta de ajudar', 'gosta de ajudar os colegas e de assumir pequenas responsabilidades'],
+      ['Engaja com seus interesses', 'envolve-se mais quando as atividades se conectam aos seus interesses'],
+      ['Família presente', 'conta com a presença e o apoio da família na vida escolar']] },
+    { k: 'bem', tipo: 'varios', rot: 'Bem-estar e emoções na escola', ops: [
+      ['Alegre e acolhido', 'demonstra alegria e sentimento de pertencimento no ambiente escolar'],
+      ['Ansiedade ou insegurança', 'demonstra sinais de ansiedade ou de insegurança diante das atividades'],
+      ['Retraído ou isolado', 'mostra-se retraíd{o} e tende a se isolar dos colegas'],
+      ['Tristeza ou desânimo', 'apresenta, com frequência, sinais de tristeza ou de desânimo'],
+      ['Baixa autoestima', 'demonstra pouca confiança na própria capacidade'],
+      ['Irritação e frustração', 'demonstra irritação e baixa tolerância à frustração'],
+      ['Cansaço ou sono', 'chega à escola com sinais de cansaço ou de sonolência'],
+      ['Mudança brusca no período', 'apresentou mudança brusca de comportamento ao longo do período']] },
+    { k: 'vuln', tipo: 'varios', res: 1, rot: 'Situações de vulnerabilidade observadas ou informadas', nenhum: 'Nenhuma situação conhecida', ops: [
+      ['Fome ou alimentação insuficiente', 'sinais de insegurança alimentar, percebidos quando chega à escola com fome'],
+      ['Higiene ou vestuário', 'dificuldades relacionadas à higiene ou ao vestuário adequado'],
+      ['Falta de material escolar', 'a falta de material escolar básico'],
+      ['Luto ou perda recente', 'a vivência de luto ou de perda recente'],
+      ['Separação ou mudança na família', 'mudanças na organização familiar, como a separação dos responsáveis'],
+      ['Mudança de casa ou moradia instável', 'mudanças de moradia ou condição de moradia instável'],
+      ['Doença grave na família', 'o adoecimento de familiar próximo'],
+      ['Cuida de irmãos ou da casa', 'responsabilidades de cuidado da casa ou de irmãos acima do esperado para a idade'],
+      ['Indícios de trabalho infantil', 'indícios de envolvimento em atividades de trabalho'],
+      ['Violência no território', 'a exposição à violência no território onde vive'],
+      ['Responsáveis com pouco tempo', 'a pouca disponibilidade dos responsáveis para acompanhar a vida escolar, em razão da rotina de trabalho'],
+      ['Sem internet ou aparelho em casa', 'a falta de acesso à internet ou a equipamentos para estudar em casa'],
+      ['Dificuldade para chegar à escola', 'dificuldades de deslocamento até a escola']] },
+    { k: 'cuid', tipo: 'varios', res: 1, rot: 'Ações de cuidado e de rede', ops: [
+      ['Escuta acolhedora', 'a escuta acolhedora d{o} estudante'],
+      ['Conversa com a família', 'o diálogo com a família'],
+      ['Busca ativa', 'a busca ativa diante das faltas'],
+      ['Doação de material ou uniforme', 'a doação de material escolar ou de uniforme'],
+      ['Escola Integrada', 'a inclusão no Programa Escola Integrada'],
+      ['Centro de Saúde', 'o encaminhamento ao Centro de Saúde'],
+      ['CRAS ou assistência social', 'a articulação com o Centro de Referência de Assistência Social (CRAS)'],
+      ['Conselho Tutelar', 'a comunicação ao Conselho Tutelar']] }
   ] },
   { id: 'bar', titulo: 'Barreiras à aprendizagem e à participação', grupos: [
     { k: 'barreiras', tipo: 'varios', rot: 'Barreiras observadas', nenhum: 'Nenhuma barreira significativa', ops: [
@@ -949,7 +995,8 @@ function montarSecoes() {
         }).join('');
         if (g.nenhum) ops += '<label class="chip"><input type="checkbox" name="g-' + g.k + '" value="n"><span>' + esc(g.nenhum) + '</span></label>';
         var dica = g.tipo === 'um' ? 'escolha uma' : 'marque quantas quiser';
-        return '<div class="grp"' + (g.ee ? ' data-ee="1"' : '') + '><div class="lbl">' + esc(g.rot) + ' <small>(' + dica + ')</small></div><div class="chips">' + ops + '</div></div>';
+        var res = g.res ? '<div class="hint" style="margin:2px 0 6px">Informação reservada: entra no relatório interno e sai da versão para a família ou outra instituição. Marque só o que foi observado ou informado, sem suposições. Suspeita de violência contra o estudante não se registra aqui: comunique à coordenação no mesmo dia.</div>' : '';
+        return '<div class="grp"' + (g.ee ? ' data-ee="1"' : '') + '><div class="lbl">' + esc(g.rot) + ' <small>(' + dica + ')</small></div>' + res + '<div class="chips">' + ops + '</div></div>';
       }).join('') + '</fieldset></div>';
     }).join('');
   $('#f-ee').addEventListener('change', aplicarEE);
@@ -1196,6 +1243,9 @@ function uniao(contribs, k) {
 }
 
 function primeiroNome(est) { return nomeBonito(est.nome).split(' ')[0]; }
+// Como o estudante é chamado: nomes compostos comuns ficam inteiros (Ana Clara, João Pedro, Maria Eduarda)
+var COMPOSTOS = { ana: 1, maria: 1, joao: 1, jose: 1, luiz: 1, luis: 1, joana: 1 };
+function nomeChamado(est) { var p = nomeBonito(est.nome).split(' '); return COMPOSTOS[norm(p[0])] && p[1] && !PART[p[1].toLowerCase()] ? p[0] + ' ' + p[1] : p[0]; }
 
 function encaixarConsid(texto, comp, est) {
   var t = cleanDash(texto).replace(/\s*\n+\s*/g, ' ');
@@ -1219,6 +1269,7 @@ function montar(est, ano, per, contribs) {
   var comps = contribs.map(function (c) { return c.componente; });
   var secs = [];
   var sujeito = cap(G.o) + ' estudante';
+  var pn = nomeChamado(est), reserv = !(docCtx && docCtx.semRes);
 
   // Identificação
   secs.push({ t: 'IDENTIFICAÇÃO', ps: [
@@ -1227,6 +1278,22 @@ function montar(est, ano, per, contribs) {
     ', relativas ' + PERIODO_TXT[per] + (per === 'Anual' ? ' de ' : ' de ') + ano + '.' +
     (ee ? ' ' + sujeito + ' integra o público da Educação Especial, razão pela qual este relatório também registra os recursos de acessibilidade e os apoios oferecidos.' : '')
   ] });
+
+  // Quem é o estudante: começa pelo que ele tem de bom, pelos vínculos e pelo que atravessa a vida dele
+  var hum = [], h1 = [];
+  var pot = uniao(contribs, 'pot'), vin = uniao(contribs, 'vinc'), bem = uniao(contribs, 'bem');
+  if (pot.length) h1.push('Destacam-se como potencialidades e interesses de ' + pn + ' ' + lista('pot', pot) + '.');
+  if (vin.length) h1.push((h1.length ? 'No convívio escolar, ' + G.o + ' estudante ' : 'No convívio escolar, ' + pn + ' ') + lista('vinc', vin) + '.');
+  if (bem.length) h1.push('Quanto ao bem-estar, observou-se que ' + (h1.length ? G.o + ' estudante' : pn) + ' ' + lista('bem', bem) + '.');
+  if (h1.length) hum.push(h1.join(' '));
+  if (reserv) {
+    var h2 = [], vu = uniao(contribs, 'vuln'), cu = uniao(contribs, 'cuid');
+    if (vu.length) h2.push('A escola tem conhecimento de situações que fazem parte da vida de ' + pn + ' e que podem interferir em sua aprendizagem e em seu bem-estar, como ' + lista('vuln', vu) +
+      '. Esses aspectos são registrados para que o percurso escolar seja compreendido em sua totalidade, e não para rotular ' + G.o + ' estudante.');
+    if (cu.length) h2.push((vu.length ? 'Diante disso, a escola realizou ' : 'No período, a escola realizou ') + 'ações de cuidado e de articulação com a rede, como ' + lista('cuid', cu) + '.');
+    if (h2.length) hum.push(h2.join(' '));
+  }
+  if (hum.length) secs.push({ t: 'QUEM É ' + G.O + ' ESTUDANTE: VÍNCULOS, BEM-ESTAR E CONTEXTO', ps: hum });
 
   // Desenvolvimento: agrupa por componente com o mesmo conjunto de respostas
   var des = {}, ordemDes = [];
@@ -1237,7 +1304,7 @@ function montar(est, ano, per, contribs) {
     if (!des[ch]) { des[ch] = { partes: partes, comps: [] }; ordemDes.push(ch); }
     des[ch].comps.push(c.componente);
   });
-  var pDes = ordemDes.map(function (ch) { var x = des[ch]; return prefixo(x.comps) + ', ' + G.o + ' estudante ' + joinPt(x.partes) + '.'; });
+  var pDes = ordemDes.map(function (ch, i) { var x = des[ch]; return prefixo(x.comps) + ', ' + (i ? G.o + ' estudante' : pn) + ' ' + joinPt(x.partes) + '.'; });
   var pHab = frasesHab(contribs);
   var psDes = [pDes.join(' '), pHab.join(' ')].filter(Boolean);
   if (psDes.length) secs.push({ t: 'DESENVOLVIMENTO E APRENDIZAGEM', ps: psDes });
@@ -1287,8 +1354,6 @@ function montar(est, ano, per, contribs) {
 
   // Considerações finais
   var fin = [], p1 = [];
-  var pot = uniao(contribs, 'pot');
-  if (pot.length) p1.push('Destacam-se como potencialidades e interesses ' + G.do + ' estudante ' + lista('pot', pot) + '.');
   p1 = p1.concat(frasesItens(contribs, 'av',
     function (p, l) { return p + ', os principais avanços ocorreram ' + l + '.'; },
     function (p, l) { return p + ', houve avanços também ' + l + '.'; }));
@@ -1304,6 +1369,7 @@ function montar(est, ano, per, contribs) {
     .sort(function (a, b) { return ((COMPPOR[a.componente] || {}).i || 99) - ((COMPPOR[b.componente] || {}).i || 99); })
     .map(function (c) { return encaixarConsid(c.consideracao, c.componente, est); });
   if (cons.length) fin.push(cons.join(' '));
+  fin.push('A escola reconhece a trajetória de ' + pn + ', valoriza cada avanço conquistado e reafirma o compromisso de seguir acompanhando seu desenvolvimento, em parceria com a família.');
   if (fin.length) secs.push({ t: 'CONSIDERAÇÕES FINAIS E ENCAMINHAMENTOS', ps: fin });
 
   secs.forEach(function (s, i) { s.t = (i + 1) + '. ' + s.t; });
@@ -1336,7 +1402,8 @@ function abrirRelatorio(est, ano, per, voltar) {
     var pn = norm(primeiroNome(est));
     $('#d-gen').value = ed ? ed.genero : (/a$/.test(pn) && !/^(luca|joshua|nicola|batista|elias)$/.test(pn) ? 'a' : 'o');
     $('#d-data').value = (ed && ed.data) || $('#d-data').value || todayISO();
-    docCtx = { est: est, ano: ano, per: per, contribs: cs, voltar: voltar, edicao: ed, sujo: false };
+    $('#d-dest').value = 'int'; $('#btn-saled').disabled = false;
+    docCtx = { est: est, ano: ano, per: per, contribs: cs, voltar: voltar, edicao: ed, sujo: false, semRes: false };
     if (ed && ed.blocos && ed.blocos.length) renderBlocos(ed.blocos); else renderDoc();
     infoEdicao(); show('doc'); window.scrollTo(0, 0);
   }).catch(function (err) { carga(false); toast(err.message); });
@@ -1411,6 +1478,16 @@ $('#d-corrigir').addEventListener('click', function (e) {
 function marcarSujo() { if (!docCtx) return; docCtx.sujo = true; $('#d-msg').textContent = 'Alterações ainda não salvas.'; }
 $('#doc').addEventListener('input', marcarSujo);
 $('#d-gen').addEventListener('change', function () { renderDoc(); marcarSujo(); });
+// Versão para a família/outra instituição: refaz o texto sem os itens reservados e não deixa salvar por cima da versão interna
+$('#d-dest').addEventListener('change', function () {
+  if (!docCtx) return;
+  var ext = $('#d-dest').value === 'ext', ed = docCtx.edicao;
+  docCtx.semRes = ext;
+  if (!ext && ed && ed.blocos && ed.blocos.length) renderBlocos(ed.blocos); else renderDoc();
+  $('#btn-saled').disabled = ext;
+  $('#d-msg').textContent = ext ? 'Versão sem informações reservadas: imprima, baixe ou copie. Para salvar edição, volte ao uso interno.' : '';
+  if (ext && ed) toast('Texto refeito pelos registros, sem as informações reservadas. Ajustes feitos à mão na versão interna não aparecem aqui.');
+});
 $('#d-data').addEventListener('change', function () {
   var ps = $('#doc').querySelectorAll('p'), feito = false;
   [].forEach.call(ps, function (p) { if (!feito && p.style.textAlign === 'right') { p.textContent = linhaData(); feito = true; } });
@@ -1597,7 +1674,7 @@ function lerArquivos(files) {
             rc.getContext('2d').putImageData(new ImageData(r.recorte.data, r.recorte.width, r.recorte.height), 0, 0);
             item.recorte = rc.toDataURL('image/jpeg', 0.85);
           }
-          item.res = FolhaREL.interpretar(CFG_FOLHA, r.compNome, r.cod.anoEsc, item.paginas, {}, GRUPOS);
+          item.res = FolhaREL.interpretar(CFG_FOLHA, r.compNome, r.cod.anoEsc, item.paginas, {}, GRUPOS, r.cod.ver);
         });
       }).catch(function (e) { tmp.st = 'erro'; tmp.erro = e.message; });
     });
@@ -1645,7 +1722,7 @@ function abrirDaFolha(f) {
   atual = f.est; show('preencher');
   abrirEstudante(function (base) {
     limparFolha(); folhaAtual = f;
-    var r = FolhaREL.interpretar(CFG_FOLHA, f.comp, c.anoEsc, f.paginas, base, GRUPOS);
+    var r = FolhaREL.interpretar(CFG_FOLHA, f.comp, c.anoEsc, f.paginas, base, GRUPOS, c.ver);
     preencherDados(r.dados);
     if (c.prof) $('#f-prof').value = c.prof;
     if (f.recorte) { $('#recorteFolha').innerHTML = '<span class="lbl">Escrito à mão na folha</span><img src="' + f.recorte + '" alt="Consideração escrita à mão na folha">' +

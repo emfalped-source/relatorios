@@ -5,7 +5,8 @@
 (function (root) {
   'use strict';
 
-  var VERSAO = '1';
+  var VERSAO = '2'; // 2: seção de vínculos, bem-estar e contexto. Folhas impressas na versão 1 continuam sendo lidas com o layout antigo.
+  var ACEITAS = { '1': 1, '2': 1 };
   var L = {
     W: 210, H: 297,
     mk: { s: 9, c: [[14, 14], [196, 14], [196, 283], [14, 283]] }, // TL, TR, BR, BL
@@ -31,7 +32,8 @@
 
   /* Monta o layout. cfg = {SECOES, HAB, AREAS, NIVEIS, areasDoComp(comp, ano), rotuloHab(t)}.
      Devolve {paginas: n, blocos: [...desenho], caixas: [{p, x, y, chave, rot}]}. */
-  function layout(cfg, comp, ano) {
+  function layout(cfg, comp, ano, ver) {
+    var SEC = String(ver || VERSAO) === '1' ? cfg.SECOES.filter(function (s) { return !s.v2; }) : cfg.SECOES;
     var blocos = [], caixas = [], p = 1, y = L.inicio1;
     function cabe(h) { if (y + h > L.yMax) { p++; y = L.inicioN; } }
     function caixa(x, yy, chave, rot) { caixas.push({ p: p, x: x, y: yy, chave: chave, rot: rot }); blocos.push({ p: p, t: 'box', x: x, y: yy }); }
@@ -85,9 +87,10 @@
     }
 
     // Seções do app
-    cfg.SECOES.forEach(function (s, si) {
+    SEC.forEach(function (s, si) {
       var primeiro = true;
-      s.grupos.forEach(function (g) {
+      // itens reservados (vulnerabilidade, rede de proteção) não vão para o papel, que passa de mão em mão: só no app
+      s.grupos.filter(function (g) { return !g.res; }).forEach(function (g) {
         var ops = g.ops.map(function (o, i) { return { r: o[0], v: i }; });
         if (g.nenhum) ops.push({ r: g.nenhum, v: 'n' });
         var maior = Math.max.apply(0, ops.map(function (o) { return o.r.length; }));
@@ -110,7 +113,7 @@
     var NL = 6, LH = 7, hc = 11 + NL * LH;
     cabe(hc);
     y += 2;
-    blocos.push({ p: p, t: 'tit', x: L.x0, y: y, s: (cfg.SECOES.length + 1) + '. CONSIDERAÇÃO PESSOAL DO PROFESSOR' });
+    blocos.push({ p: p, t: 'tit', x: L.x0, y: y, s: (SEC.length + 1) + '. CONSIDERAÇÃO PESSOAL DO PROFESSOR' });
     blocos.push({ p: p, t: 'txt', x: L.x0, y: y + 4.5, s: 'Escreva com suas palavras uma observação sobre o estudante (opcional). Use letra legível: a coordenação vai digitar este texto.', f: 7.6, i: 1 });
     var y0 = y + 7;
     for (var i = 1; i <= NL; i++) blocos.push({ p: p, t: 'risco', x: L.x0, y: y0 + i * LH, w: L.x1 - L.x0 });
@@ -127,8 +130,8 @@
   function lerCodigo(t) {
     var s = String(t || '').split(';');
     if (s[0] !== 'EMFALREL') return null;
-    if (s.length !== 10 || s[1] !== VERSAO) return { erro: 'versao' };
-    return { est: s[2], ano: s[3], per: Number(s[4]), comp: Number(s[5]), anoEsc: Number(s[6]) || 0, pag: Number(s[7]), tot: Number(s[8]), prof: decNome(s[9]) };
+    if (s.length !== 10 || !ACEITAS[s[1]]) return { erro: 'versao' };
+    return { ver: s[1], est: s[2], ano: s[3], per: Number(s[4]), comp: Number(s[5]), anoEsc: Number(s[6]) || 0, pag: Number(s[7]), tot: Number(s[8]), prof: decNome(s[9]) };
   }
 
   // ===== PDF =====
@@ -357,7 +360,7 @@
     }
     var escala = Math.hypot(marcas[0][0] - marcas[2][0], marcas[0][1] - marcas[2][1]) / Math.hypot(182, 269);
     if (!H || menor > 12 * escala) return { ok: false, erro: 'A folha parece dobrada ou muito inclinada. Tente outra foto, de frente.', cod: cod };
-    var lay = layout(cfg, compNome, cod.anoEsc);
+    var lay = layout(cfg, compNome, cod.anoEsc, cod.ver);
     var cxs = lay.caixas.filter(function (c) { return c.p === cod.pag; });
     var rec = lay.consid && lay.consid.p === cod.pag ? recortar(img, H, lay.consid, 6) : null;
     return { ok: true, cod: cod, compNome: compNome, valores: cxs.map(function (c) { return miolo(b, w, h, H, c.x, c.y); }), recorte: rec };
@@ -366,8 +369,8 @@
   /* Junta as páginas lidas de um mesmo estudante e devolve o que vai para o formulário do app.
      paginas = {nº: valores}. base = dados que já existiam (as páginas não lidas mantêm o que estava).
      Devolve {dados, alertas:[{rot, motivo, sel}], lidas:[nºs], faltam:[nºs]} */
-  function interpretar(cfg, compNome, anoEsc, paginas, base, GRUPOS) {
-    var lay = layout(cfg, compNome, anoEsc), d = JSON.parse(JSON.stringify(base || {}));
+  function interpretar(cfg, compNome, anoEsc, paginas, base, GRUPOS, ver) {
+    var lay = layout(cfg, compNome, anoEsc, ver), d = JSON.parse(JSON.stringify(base || {}));
     var lidas = Object.keys(paginas).map(Number).sort(), faltam = [], alertas = [];
     for (var p = 1; p <= lay.paginas; p++) if (lidas.indexOf(p) < 0) faltam.push(p);
     var porPag = {};
