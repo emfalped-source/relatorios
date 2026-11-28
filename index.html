@@ -180,6 +180,13 @@ table.rank tr:hover td{background:var(--surface-2)}
 .grp + .grp{border-top:1px dashed var(--line);padding-top:14px}
 .hab-row{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line)}
 .hab-row:last-child{border-bottom:0}
+.enc-det{display:flex;flex-direction:column;gap:8px;border-left:3px solid var(--line);padding-left:10px}
+.enc-det textarea{min-height:80px}
+input[type=number]{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:9px 11px;width:100%;min-width:0}
+.diag{border:1px solid var(--ochre);border-radius:8px;padding:8px 12px;font-size:.85rem}
+details.comp summary{cursor:pointer;font-weight:600;color:var(--accent);padding:4px 0}
+details.comp[open] summary{margin-bottom:8px}
+details.comp > div{display:flex;flex-direction:column;gap:10px}
 details.mais{border-top:1px dashed var(--line);padding-top:12px}
 details.mais summary{cursor:pointer;font-weight:600;color:var(--accent);padding:4px 0}
 details.mais[open] summary{margin-bottom:6px}
@@ -299,6 +306,7 @@ input[type=password]{font:inherit;color:var(--ink);background:var(--bg);border:1
             <label class="f"><span>Escreva com suas palavras (opcional)</span>
               <textarea id="f-consid" placeholder="Ex.: Ele melhorou muito depois que passou a sentar na frente e a usar o caderno quadriculado."></textarea></label>
             <p class="hint" style="margin:0">O app encaixa este texto nas considerações finais do relatório, indicando o seu componente.</p>
+            <div class="diag" id="diagAviso" hidden></div>
             <label class="f"><span>Seu nome no relatório</span><input type="text" id="f-prof"></label>
           </fieldset></div>
 
@@ -375,9 +383,47 @@ input[type=password]{font:inherit;color:var(--ink);background:var(--bg);border:1
             <label class="f"><span>Como tratar no texto</span>
               <select id="d-gen"><option value="o">o estudante</option><option value="a">a estudante</option></select></label>
             <label class="f"><span>Para quem é o relatório</span>
-              <select id="d-dest"><option value="int">Uso interno da escola (completo)</option><option value="ext">Família ou outra instituição (sem informações reservadas)</option></select></label>
+              <select id="d-dest">
+                <option value="int">Uso interno da escola (completo)</option>
+                <option value="fam">Família (sem informações reservadas)</option>
+                <option value="sau">Saúde: pedido de avaliação (médico, neurologista, psicólogo…)</option>
+                <option value="cras">CRAS ou assistência social</option>
+                <option value="ct">Conselho Tutelar</option>
+              </select></label>
             <label class="f"><span>Data do relatório</span><input type="date" id="d-data"></label>
           </div>
+          <p class="hint" id="d-desthint" style="margin:0"></p>
+          <details class="comp" id="d-comp">
+            <summary>Dados complementares (idade, faltas, histórico, quem pediu, assinaturas)</summary>
+            <div>
+              <div class="grid">
+                <label class="f"><span>Data de nascimento</span><input type="date" id="c-nasc"></label>
+                <label class="f"><span>Faltas no período</span><input type="number" min="0" id="c-faltas" inputmode="numeric"></label>
+                <label class="f"><span>Dias letivos no período</span><input type="number" min="0" id="c-dias" inputmode="numeric"></label>
+              </div>
+              <label class="f"><span>Trajetória escolar</span><textarea id="c-hist" placeholder="Ex.: estuda na EMFAL desde o 1º ano; repetiu o 3º ano em 2024; veio transferido de outra escola em 2025."></textarea></label>
+              <label class="f"><span>Resultados de avaliações</span><textarea id="c-res" placeholder="Ex.: no Provão do 2º trimestre, tirou 3,5 de 10 em Matemática e 4 de 10 em Língua Portuguesa; no simulado do Saeb acertou 6 de 22 questões."></textarea></label>
+              <div class="grid">
+                <label class="f"><span>Responsável (nome e contato)</span><input type="text" id="c-resp"></label>
+                <label class="f"><span>Quem pediu o relatório e para quê</span><input type="text" id="c-sol" placeholder="Ex.: a mãe, para consulta com neurologista no Centro de Saúde"></label>
+              </div>
+              <div class="grp" id="c-saude" hidden>
+                <div class="lbl">Avaliação sugerida <small>(marque quantas quiser; a decisão é do profissional de saúde)</small></div>
+                <div class="chips" id="c-prof"></div>
+                <label class="switch"><input type="checkbox" id="c-autoriza"><span>A família autorizou incluir informações do contexto familiar (luto, separação, mudança de casa, doença na família). Sem essa autorização, elas ficam fora da versão para a saúde.</span></label>
+              </div>
+              <div class="grid">
+                <label class="f"><span>Coordenação: nome</span><input type="text" id="c-coord"></label>
+                <label class="f"><span>Coordenação: matrícula (BM)</span><input type="text" id="c-coordbm"></label>
+              </div>
+              <div class="grid">
+                <label class="f"><span>Direção: nome</span><input type="text" id="c-dir"></label>
+                <label class="f"><span>Direção: matrícula (BM)</span><input type="text" id="c-dirbm"></label>
+              </div>
+              <p class="hint" style="margin:0">Os dados do estudante não ficam guardados no aparelho: entram no texto e, no uso interno, são salvos junto com a edição. Nomes e matrículas da coordenação e da direção ficam guardados neste aparelho.</p>
+              <div class="actions"><button type="button" class="btn primary small" id="c-aplicar">Aplicar ao texto</button></div>
+            </div>
+          </details>
           <div class="aviso-folha" id="d-edinfo" hidden></div>
           <div class="aviso-folha" id="d-corrigir" hidden></div>
           <p class="hint" style="margin:0">Toque no texto da folha abaixo para corrigir ou acrescentar o que quiser e depois em <b>Salvar edição</b>. A versão salva abre para todos que têm acesso ao estudante, em qualquer aparelho. Mudar o tratamento (o/a) refaz o texto a partir dos registros.</p>
@@ -611,6 +657,107 @@ var SECOES = [
   ] }
 ];
 var GRUPOS = {}; SECOES.forEach(function (s) { s.grupos.forEach(function (g) { GRUPOS[g.k] = g; }); });
+
+/* Observações para encaminhamento (avaliação de saúde). Ficam fora de SECOES para não mudar o layout das folhas impressas.
+   ex:1 = exemplo concreto obrigatório quando algum sinal é marcado. acoes:1 = bloco do que a escola já tentou (relato obrigatório).
+   Os sinais descrevem comportamentos observados em aula, nunca diagnósticos. */
+var FREQ = [['Às vezes', 'às vezes'], ['Algumas vezes por semana', 'algumas vezes por semana'], ['Quase todo dia', 'quase todos os dias'], ['Várias vezes ao dia', 'várias vezes ao dia']];
+var DESDE = [['Começou há pouco', 'começaram há poucas semanas'], ['Neste ano letivo', 'são observados desde o início deste ano letivo'],
+  ['Desde o ano passado', 'são observados desde o ano passado'], ['Há mais de dois anos', 'são observados há mais de dois anos'],
+  ['Desde que entrou na escola', 'são observados desde que {o} estudante entrou na escola']];
+var ENC = [
+  { k: 'apr', t: 'Aprendizagem', ops: [
+    ['Não reconhece letras ou sílabas esperadas', 'ainda não reconhece letras ou sílabas esperadas para o ano escolar'],
+    ['Lê com muita dificuldade', 'lê com muita dificuldade ou sem compreender o que leu'],
+    ['Troca, omite ou inverte letras', 'troca, omite ou inverte letras ao escrever'],
+    ['Dificuldade com números e cálculos', 'tem dificuldade com números e cálculos simples'],
+    ['Esquece o que aprendeu no dia anterior', 'esquece no dia seguinte o que parecia ter aprendido'],
+    ['Responde oralmente, mas não escreve', 'consegue responder oralmente, mas não consegue registrar por escrito']] },
+  { k: 'ate', t: 'Atenção e comportamento em sala', ops: [
+    ['Distrai-se com facilidade', 'se distrai com facilidade com estímulos do ambiente'],
+    ['Não termina as atividades', 'começa as atividades, mas não as termina'],
+    ['Levanta-se muitas vezes', 'se levanta muitas vezes e tem dificuldade de permanecer sentad{o}'],
+    ['Fala fora da vez e interrompe', 'fala fora da vez e interrompe colegas e professores'],
+    ['Age por impulso', 'age por impulso, sem considerar as consequências'],
+    ['Parece não ouvir quando chamado', 'parece não ouvir quando é chamad{o} diretamente'],
+    ['Perde ou esquece materiais', 'perde ou esquece materiais com frequência'],
+    ['Fica "desligado"', 'fica alheio à aula por longos períodos, olhando para longe']] },
+  { k: 'lin', t: 'Linguagem e comunicação', ex: 1, ops: [
+    ['Fala pouco para a idade', 'fala menos do que o esperado para a idade'],
+    ['Troca sons na fala', 'troca sons ao falar'],
+    ['Não entende comandos simples', 'tem dificuldade de compreender comandos simples'],
+    ['Não consegue contar um fato em ordem', 'tem dificuldade de contar um fato na ordem em que aconteceu'],
+    ['Repete palavras ou frases fora de contexto', 'repete palavras ou frases fora de contexto'],
+    ['Gagueja', 'gagueja ao falar'],
+    ['Entende tudo ao pé da letra', 'entende as falas ao pé da letra e não percebe brincadeiras ou ironias']] },
+  { k: 'int', t: 'Interação social', ex: 1, ops: [
+    ['Prefere ficar sozinho', 'prefere ficar sozinh{o} no recreio e nas atividades em grupo'],
+    ['Pouco contato visual', 'faz pouco contato visual durante as conversas'],
+    ['Não entende regras de jogos em grupo', 'tem dificuldade de compreender as regras de jogos e brincadeiras em grupo'],
+    ['Interesse intenso por um só assunto', 'demonstra interesse intenso e restrito por um assunto específico'],
+    ['Não percebe como o outro se sente', 'tem dificuldade de perceber como os colegas se sentem'],
+    ['Aproxima-se de forma inadequada', 'aproxima-se dos colegas de forma inadequada, empurrando ou invadindo o espaço do outro'],
+    ['Reage mal a mudanças na rotina', 'reage com muito desconforto a mudanças na rotina']] },
+  { k: 'reg', t: 'Regulação emocional', ex: 1, ops: [
+    ['Crises de choro ou de raiva', 'tem crises de choro ou de raiva'],
+    ['Agride colegas ou adultos', 'agride colegas ou adultos em momentos de conflito'],
+    ['Bate em si mesmo ou se morde', 'bate em si mesm{o} ou se morde em momentos de crise'],
+    ['Medo ou ansiedade intensa', 'demonstra medo ou ansiedade intensa, como chorar para entrar na sala'],
+    ['Demora muito para se acalmar', 'demora muito para se acalmar depois de contrariad{o}'],
+    ['Mudanças bruscas de humor', 'apresenta mudanças bruscas de humor ao longo do dia'],
+    ['Recusa-se a fazer as atividades', 'se recusa a realizar as atividades propostas']] },
+  { k: 'mot', t: 'Motricidade', ex: 1, ops: [
+    ['Letra muito irregular para a idade', 'tem letra muito irregular ou ilegível para a idade'],
+    ['Segura o lápis de forma incomum', 'segura o lápis com força excessiva ou de forma incomum'],
+    ['Dificuldade para recortar, colar ou abotoar', 'tem dificuldade para recortar, colar, abotoar ou amarrar'],
+    ['Tropeça, cai ou esbarra muito', 'tropeça, cai ou esbarra em objetos com frequência'],
+    ['Dificuldade para correr, pular ou pegar bola', 'tem dificuldade para correr, pular ou pegar uma bola'],
+    ['Cansa rápido ao escrever', 'cansa rapidamente ao escrever']] },
+  { k: 'sen', t: 'Reações sensoriais', ex: 1, ops: [
+    ['Incomoda-se com barulho', 'tapa os ouvidos ou se desorganiza com barulho'],
+    ['Incomoda-se com texturas', 'se incomoda com texturas, etiquetas, cola ou tinta'],
+    ['Recusa muitos alimentos na merenda', 'recusa grande parte dos alimentos da merenda'],
+    ['Busca movimento o tempo todo', 'busca movimento o tempo todo, balançando o corpo ou girando'],
+    ['Cheira ou leva objetos à boca', 'cheira ou leva objetos à boca'],
+    ['Parece não sentir dor ou frio', 'parece não sentir dor, calor ou frio como os colegas']] },
+  { k: 'tent', t: 'O que a escola já tentou', acoes: 1, ops: [
+    ['Mudança de lugar na sala', 'a mudança de lugar na sala'],
+    ['Atividades adaptadas', 'atividades adaptadas'],
+    ['Tempo ampliado', 'a ampliação do tempo'],
+    ['Rotina visual e combinados', 'rotina visual e combinados claros'],
+    ['Atendimento individual', 'o atendimento individual'],
+    ['PIP ou reforço', 'a participação no PIP ou no reforço'],
+    ['Conversa com a família', 'conversas com a família'],
+    ['Encaminhamento ao AEE', 'o encaminhamento ao AEE']] },
+  { k: 'vis', t: 'Sinais de visão e audição', ops: [
+    ['Aproxima o caderno do rosto', 'aproxima muito o caderno ou o livro do rosto'],
+    ['Aperta os olhos ou tem dor de cabeça', 'aperta os olhos ou se queixa de dor de cabeça'],
+    ['Copia do quadro com muitos erros', 'copia do quadro com muitos erros ou omissões'],
+    ['Pede para repetir com frequência', 'pede com frequência que as falas sejam repetidas'],
+    ['Não responde quando chamado de costas', 'não responde quando é chamad{o} de costas'],
+    ['Fala muito alto', 'fala em volume muito alto']] }
+];
+// Avaliações que a escola pode sugerir no relatório para a saúde (a decisão é do profissional de saúde)
+var PROFS = [['Médico do Centro de Saúde', 'médico do Centro de Saúde'], ['Neurologista', 'neurologista'], ['Psicólogo', 'psicólogo'],
+  ['Fonoaudiólogo', 'fonoaudiólogo'], ['Oftalmologista', 'oftalmologista'], ['Avaliação auditiva', 'avaliação auditiva'],
+  ['Terapeuta ocupacional', 'terapeuta ocupacional'], ['Psiquiatra infantil', 'psiquiatra da infância e adolescência']];
+// Itens de vulnerabilidade que podem ir para a saúde, com autorização da família (luto, separação, mudança de casa, doença na família)
+var VULN_SAUDE = { 3: 1, 4: 1, 5: 1, 6: 1 };
+/* Destinos do relatório. vuln: 'todos' | 'saude' (só VULN_SAUDE e com autorização) | null. */
+var DEST = {
+  int: { titulo: 'RELATÓRIO DE DESENVOLVIMENTO DO ESTUDANTE', vuln: 'todos', cuid: 1, enc: 1,
+    dica: 'Versão completa, com informações reservadas. Só esta versão pode ser salva.' },
+  fam: { titulo: 'RELATÓRIO DE DESENVOLVIMENTO DO ESTUDANTE', vuln: null, cuid: 0, enc: 0,
+    dica: 'Sem vulnerabilidades, ações de rede e observações para encaminhamento.' },
+  sau: { titulo: 'RELATÓRIO ESCOLAR PARA AVALIAÇÃO DE SAÚDE', vuln: 'saude', cuid: 0, enc: 1,
+    dica: 'Inclui as observações para encaminhamento (sinais, frequência, desde quando e exemplos). Contexto familiar só com autorização da família. Preencha os dados complementares abaixo.' },
+  cras: { titulo: 'RELATÓRIO ESCOLAR PARA A ASSISTÊNCIA SOCIAL (CRAS)', vuln: 'todos', cuid: 1, enc: 0,
+    dica: 'Inclui vulnerabilidades e ações de rede. Preencha faltas e quem pediu nos dados complementares.' },
+  ct: { titulo: 'COMUNICAÇÃO AO CONSELHO TUTELAR', vuln: 'todos', cuid: 1, enc: 0,
+    dica: 'Use para faltas reiteradas ou evasão depois de esgotados os recursos da escola, e para repetência elevada (art. 56 do ECA). Suspeita de violência segue o protocolo da coordenação no mesmo dia.' }
+};
+// Termos que a escola não deve usar como afirmação: o diagnóstico é do profissional de saúde
+var DIAG_RE = /\b(tdah|t\.?d\.?a\.?h|autis\w*|tea|hiperativ\w*|d[eé]ficit de aten\w*|dislex\w*|discalcul\w*|disgraf\w*|toc|bipolar\w*|depress\w*|deprimid\w*|retardo|retardad\w*|deficiente mental|esquizofren\w*|transtorno\w*|s[ií]ndrome)\b/i;
 
 function $(s) { return document.querySelector(s); }
 function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
@@ -998,8 +1145,10 @@ function montarSecoes() {
         var res = g.res ? '<div class="hint" style="margin:2px 0 6px">Informação reservada: entra no relatório interno e sai da versão para a família ou outra instituição. Marque só o que foi observado ou informado, sem suposições. Suspeita de violência contra o estudante não se registra aqui: comunique à coordenação no mesmo dia.</div>' : '';
         return '<div class="grp"' + (g.ee ? ' data-ee="1"' : '') + '><div class="lbl">' + esc(g.rot) + ' <small>(' + dica + ')</small></div>' + res + '<div class="chips">' + ops + '</div></div>';
       }).join('') + '</fieldset></div>';
-    }).join('');
+    }).join('') + htmlEnc();
   $('#f-ee').addEventListener('change', aplicarEE);
+  $('#f-enc').addEventListener('change', aplicarEnc);
+  $('#secoes').addEventListener('change', function (e) { if (e.target.name && /^e-/.test(e.target.name)) aplicarEnc(); });
   // "um": tocar de novo desmarca; "nenhum" é exclusivo
   $('#habSec').addEventListener('click', alternarRadio);
   $('#secoes').addEventListener('click', function (e) {
@@ -1021,6 +1170,85 @@ function alternarRadio(e) {
   if (inp.dataset.on === '1') { e.preventDefault(); inp.checked = false; inp.dataset.on = ''; }
   else { [].forEach.call(document.getElementsByName(inp.name), function (x) { x.dataset.on = ''; }); setTimeout(function () { inp.dataset.on = inp.checked ? '1' : ''; }, 0); }
 }
+function htmlEnc() {
+  var opt = function (lista) { return '<option value="">Escolha</option>' + lista.map(function (o, i) { return '<option value="' + i + '">' + esc(o[0]) + '</option>'; }).join(''); };
+  return '<div class="sheet"><fieldset><legend>Observações para encaminhamento</legend>' +
+    '<label class="switch"><input type="checkbox" id="f-enc"><span>Preencher quando a família ou a escola pedir relatório para avaliação de saúde (médico, neurologista, psicólogo, fonoaudiólogo). Descreva o que você vê em aula, sem nomear diagnósticos.</span></label>' +
+    '<div id="encCorpo" style="display:none;flex-direction:column;gap:14px">' +
+    '<p class="hint" style="margin:0">Marque os sinais que você observa. Ao marcar, aparecem campos de frequência, desde quando e exemplo. Nos blocos 3 a 8 o exemplo é obrigatório: conte o que aconteceu, quando e o que ' + 'o estudante fez. É o exemplo que permite ao profissional de saúde entender o caso.</p>' +
+    ENC.map(function (b, bi) {
+      var ops = b.ops.map(function (o, i) { return '<label class="chip"><input type="checkbox" name="e-' + b.k + '" value="' + i + '"><span>' + esc(o[0]) + '</span></label>'; }).join('');
+      var det = b.acoes ?
+        '<label class="f"><span>O que foi feito e como o estudante respondeu (obrigatório)</span><textarea id="e-' + b.k + '-ex" placeholder="Ex.: em agosto, passou a sentar perto da professora e a receber as tarefas em partes; terminou mais atividades nas duas primeiras semanas, depois voltou a se dispersar."></textarea></label>' :
+        '<div class="grid"><label class="f"><span>Com que frequência</span><select id="e-' + b.k + '-f">' + opt(FREQ) + '</select></label>' +
+        '<label class="f"><span>Desde quando</span><select id="e-' + b.k + '-d">' + opt(DESDE) + '</select></label></div>' +
+        '<label class="f"><span>Em que situações aparece</span><input type="text" id="e-' + b.k + '-sit" placeholder="Ex.: nas atividades escritas longas e depois do recreio"></label>' +
+        '<label class="f"><span>O que ajuda</span><input type="text" id="e-' + b.k + '-aj" placeholder="Ex.: sentar perto da professora, receber a tarefa em partes"></label>' +
+        '<label class="f"><span>Exemplo concreto (' + (b.ex ? 'obrigatório' : 'opcional') + ')</span><textarea id="e-' + b.k + '-ex" placeholder="Ex.: no dia 12/11, durante a cópia do quadro, parou na segunda linha, ficou 20 minutos mexendo no estojo e só retomou quando a professora apontou a linha."></textarea></label>';
+      return '<div class="grp" data-enc="' + b.k + '"><div class="lbl">' + (bi + 1) + '. ' + esc(b.t) + ' <small>(marque o que observa)</small></div>' +
+        '<div class="chips">' + ops + '</div><div class="enc-det" id="e-' + b.k + '-det" hidden>' + det + '</div></div>';
+    }).join('') + '</div></fieldset></div>';
+}
+function aplicarEnc() {
+  var on = $('#f-enc').checked;
+  $('#encCorpo').style.display = on ? 'flex' : 'none';
+  ENC.forEach(function (b) {
+    var marc = [].some.call(document.getElementsByName('e-' + b.k), function (x) { return x.checked; });
+    $('#e-' + b.k + '-det').hidden = !(marc || b.acoes || $('#e-' + b.k + '-ex').value.trim());
+  });
+}
+function valNum(id) { var v = $(id).value; return v === '' ? null : Number(v); }
+function lerEnc() {
+  if (!$('#f-enc').checked) return null;
+  var o = {};
+  ENC.forEach(function (b) {
+    var s = [].filter.call(document.getElementsByName('e-' + b.k), function (x) { return x.checked; }).map(function (x) { return Number(x.value); });
+    var ex = $('#e-' + b.k + '-ex').value.trim();
+    if (b.acoes) { if (s.length || ex) o[b.k] = { s: s, ex: ex }; return; }
+    if (!s.length) return;
+    var e = { s: s, ex: ex, sit: $('#e-' + b.k + '-sit').value.trim(), aj: $('#e-' + b.k + '-aj').value.trim() };
+    var f = valNum('#e-' + b.k + '-f'), d = valNum('#e-' + b.k + '-d');
+    if (f != null) e.f = f; if (d != null) e.d = d;
+    o[b.k] = e;
+  });
+  return o;
+}
+function validarEnc(o) {
+  if (!o) return '';
+  for (var i = 0; i < ENC.length; i++) {
+    var b = ENC[i], e = o[b.k];
+    if (b.ex && e && e.s.length && e.ex.length < 25) return 'Em "' + b.t + '", escreva um exemplo concreto: o que aconteceu, quando e o que o estudante fez.';
+  }
+  var t = o.tent;
+  if (!t || t.ex.length < 25) return 'Em "O que a escola já tentou", conte o que foi feito e como o estudante respondeu. Sem isso o profissional de saúde não sabe o que já foi testado.';
+  return '';
+}
+function preencherEnc(o) {
+  $('#f-enc').checked = !!o;
+  ENC.forEach(function (b) {
+    var e = (o && o[b.k]) || {}, set = {};
+    (e.s || []).forEach(function (i) { set[i] = 1; });
+    [].forEach.call(document.getElementsByName('e-' + b.k), function (x) { x.checked = !!set[x.value]; });
+    $('#e-' + b.k + '-ex').value = e.ex || '';
+    if (!b.acoes) {
+      $('#e-' + b.k + '-f').value = e.f != null ? String(e.f) : '';
+      $('#e-' + b.k + '-d').value = e.d != null ? String(e.d) : '';
+      $('#e-' + b.k + '-sit').value = e.sit || ''; $('#e-' + b.k + '-aj').value = e.aj || '';
+    }
+  });
+  aplicarEnc();
+}
+// Aviso quando o professor escreve um termo diagnóstico
+function checarDiag() {
+  var txts = [$('#f-consid').value];
+  [].forEach.call(document.querySelectorAll('#encCorpo textarea, #encCorpo input[type=text]'), function (x) { txts.push(x.value); });
+  var m = DIAG_RE.exec(txts.join(' \n '));
+  var box = $('#diagAviso');
+  if (!m) { box.hidden = true; return; }
+  box.innerHTML = 'Você escreveu <b>' + esc(m[0]) + '</b>. A escola descreve o que observa; o diagnóstico é do profissional de saúde. ' +
+    'Troque por uma descrição do comportamento (ex.: "levanta-se várias vezes durante a explicação"). Se for um diagnóstico já dado por laudo, escreva "conforme laudo apresentado pela família".';
+  box.hidden = false;
+}
 function aplicarEE() {
   var on = $('#f-ee').checked;
   [].forEach.call(document.querySelectorAll('#secoes [data-ee]'), function (g) { g.hidden = !on; });
@@ -1034,6 +1262,7 @@ function lerDados() {
     if (v.length) d[k] = g.tipo === 'um' ? v[0] : v;
   });
   var h = lerHab(); if (h) d.hab = h;
+  var en = lerEnc(); if (en) d.enc = en;
   return d;
 }
 function preencherDados(d) {
@@ -1046,6 +1275,7 @@ function preencherDados(d) {
   });
   aplicarEE();
   renderHab(); preencherHab(d.hab);
+  preencherEnc(d.enc || null);
 }
 
 function filtroAtual() { return { ano: $('#f-ano').value, per: $('#f-periodo').value, comp: $('#f-comp').value }; }
@@ -1077,10 +1307,10 @@ function abrirEstudante(depois, idAlvo) {
     '<div class="prog">' + (outros.length ? outros.map(function (c) { return '<span class="pill">' + esc(c.componente) + '</span>'; }).join('') : '<span class="hint">Nenhum outro professor registrou ainda.</span>') + '</div>';
   $('#corpo').hidden = false; $('#form-msg').textContent = ''; $('#habSec').dataset.ano = '';
   $('#f-prof').value = SESS.eu.nome || '';
-  if (!minha) { meu = null; preencherDados({ ee: outrosEE(atual.id, f) }); $('#f-consid').value = ''; $('#btn-apagar').hidden = true; $('#btn-salvar').textContent = 'Salvar minha parte'; if (depois) depois({ ee: outrosEE(atual.id, f) }); return; }
+  if (!minha) { meu = null; preencherDados({ ee: outrosEE(atual.id, f) }); $('#f-consid').value = ''; $('#diagAviso').hidden = true; $('#btn-apagar').hidden = true; $('#btn-salvar').textContent = 'Salvar minha parte'; if (depois) depois({ ee: outrosEE(atual.id, f) }); return; }
   chamar('Abrindo seu registro…', 'contribuicoes', atual.id, f.ano, f.per).then(function (lista) {
     meu = lista.filter(function (c) { return c.id === minha.id; })[0] || null;
-    preencherDados(meu ? meu.dados : {}); $('#f-consid').value = meu ? meu.consideracao : '';
+    preencherDados(meu ? meu.dados : {}); $('#f-consid').value = meu ? meu.consideracao : ''; checarDiag();
     if (meu && meu.professor) $('#f-prof').value = meu.professor;
     var deOutro = !!(meu && meu.usuario !== SESS.eu.usuario);
     $('#f-prof').readOnly = deOutro;
@@ -1107,6 +1337,8 @@ $('#form').addEventListener('submit', function (e) {
   var f = filtroAtual(), dados = lerDados();
   var tem = Object.keys(dados).some(function (k) { return k !== 'ee'; }) || $('#f-consid').value.trim();
   if (!tem) { $('#form-msg').textContent = 'Marque pelo menos uma opção ou escreva sua consideração.'; return; }
+  var errEnc = validarEnc(dados.enc);
+  if (errEnc) { $('#form-msg').textContent = errEnc; toast(errEnc); return; }
   var c = { id: meu ? meu.id : '', anoLetivo: f.ano, periodo: f.per, turma: atual.turma, estudanteId: atual.id, estudante: atual.nome,
     componente: f.comp, professor: $('#f-prof').value.trim(), dados: dados, consideracao: $('#f-consid').value.trim() };
   chamar('Salvando…', 'salvarContribuicao', c).then(function (res) {
@@ -1128,6 +1360,7 @@ $('#btn-apagar').addEventListener('click', function () {
     setDados(res); meu = null; toast('Registro apagado'); renderEstList(); abrirEstudante();
   }).catch(function (err) { toast(err.message); });
 });
+$('#corpo').addEventListener('input', function (e) { if (/TEXTAREA|INPUT/.test(e.target.tagName) && e.target.type !== 'checkbox' && e.target.type !== 'radio') checarDiag(); });
 $('#btn-ver').addEventListener('click', function () { if (atual) abrirRelatorio(atual, $('#f-ano').value, $('#f-periodo').value, 'preencher'); });
 
 // ---------- aba Relatórios ----------
@@ -1264,20 +1497,121 @@ function encaixarConsid(texto, comp, est) {
   return pre + ', registra-se a seguinte observação docente: ' + t;
 }
 
+function fim(t) { t = cleanDash(t).replace(/\s*\n+\s*/g, ' '); return t && !/[.!?]$/.test(t) ? t + '.' : t; }
+function idadeEm(nasc, ref) {
+  var a = String(nasc).split('-').map(Number), b = String(ref).split('-').map(Number);
+  if (a.length < 3 || b.length < 3 || !a[0]) return null;
+  var i = b[0] - a[0]; if (b[1] < a[1] || (b[1] === a[1] && b[2] < a[2])) i--;
+  return i >= 0 && i < 30 ? i : null;
+}
+function assinatura(nome, bm, cargo) { return (nome ? nome + ', ' : '') + cargo + (bm ? ' (BM ' + bm + ')' : ''); }
+// Dados complementares preenchidos na tela do relatório
+function complementos() {
+  var v = function (id) { var el = $(id); return el ? el.value.trim() : ''; };
+  var n = function (id) { var x = v(id); return x === '' ? null : Math.max(0, Math.round(Number(x))); };
+  var profs = [].filter.call(document.querySelectorAll('#c-prof input'), function (x) { return x.checked; }).map(function (x) { return Number(x.value); });
+  return { nasc: v('#c-nasc'), faltas: n('#c-faltas'), dias: n('#c-dias'), hist: v('#c-hist'), res: v('#c-res'), resp: v('#c-resp'), sol: v('#c-sol'),
+    profs: profs, autoriza: !!($('#c-autoriza') && $('#c-autoriza').checked),
+    coord: v('#c-coord'), coordbm: v('#c-coordbm'), dir: v('#c-dir'), dirbm: v('#c-dirbm') };
+}
+// Seção com os sinais observados, quantos professores viram cada um e os detalhes de cada professor
+function secaoEnc(contribs) {
+  var cs = contribs.filter(function (c) { return c.dados && c.dados.enc && Object.keys(c.dados.enc).length; })
+    .sort(function (a, b) { return ((COMPPOR[a.componente] || {}).i || 99) - ((COMPPOR[b.componente] || {}).i || 99); });
+  if (!cs.length) return null;
+  var Y = cs.length, ps = [];
+  ps.push('As observações a seguir foram registradas ' + (Y === 1 ? prefixo([cs[0].componente]).replace(/^E/, 'e').replace(/^N/, 'n') : 'por ' + Y + ' professores (' + joinPt(cs.map(function (c) { return c.componente; })) + ')') +
+    ', a partir do dia a dia escolar. Elas descrevem comportamentos observados em aula e não têm caráter diagnóstico.');
+  var n = 0;
+  // o que a escola já tentou fecha a seção
+  ENC.filter(function (b) { return !b.acoes; }).concat(ENC.filter(function (b) { return b.acoes; })).forEach(function (b) {
+    var marc = {}, det = [];
+    cs.forEach(function (c) {
+      var e = c.dados.enc[b.k]; if (!e) return;
+      (e.s || []).forEach(function (i) { (marc[i] = marc[i] || []).push(c.componente); });
+      det.push({ c: c.componente, e: e });
+    });
+    if (!det.length) return;
+    n++;
+    var t = [];
+    if (b.acoes) {
+      det.forEach(function (d) {
+        var acs = (d.e.s || []).map(function (i) { return b.ops[i][1]; });
+        var x = prefixo([d.c]) + (acs.length ? ', foram adotadas ações como ' + joinPt(acs) + '.' : ',');
+        if (d.e.ex) x += (acs.length ? ' Relato: ' : ' relata-se: ') + fim(d.e.ex);
+        t.push(x);
+      });
+    } else {
+      var idx = Object.keys(marc).map(Number).sort(function (a, c) { return marc[c].length - marc[a].length || a - c; });
+      if (!idx.length) { n--; return; }
+      t.push('Observou-se que ' + G.o + ' estudante ' + joinPt(idx.map(function (i) {
+        var q = marc[i];
+        return concord(b.ops[i][1]) + (Y > 1 ? ' (' + q.length + ' de ' + Y + ' professores: ' + joinPt(q) + ')' : '');
+      })) + '.');
+      det.forEach(function (d) {
+        var e = d.e, p = [];
+        if (e.f != null) p.push('os sinais aparecem ' + FREQ[e.f][1]);
+        if (e.d != null) p.push((p.length ? '' : 'os sinais ') + concord(DESDE[e.d][1]));
+        var x = p.length ? prefixo([d.c]) + ', ' + joinPt(p) + '.' : '';
+        var extra = [];
+        if (e.sit) extra.push('Situações em que aparecem: ' + fim(e.sit));
+        if (e.aj) extra.push('O que ajuda: ' + fim(e.aj));
+        if (e.ex) extra.push('Exemplo: ' + fim(e.ex));
+        if (extra.length) x = (x ? x + ' ' : prefixo([d.c]) + ', registra-se o seguinte. ') + extra.join(' ');
+        if (x) t.push(x);
+      });
+    }
+    ps.push(n + ') ' + b.t + '. ' + t.join(' '));
+  });
+  return n ? { t: 'OBSERVAÇÕES PARA AVALIAÇÃO DE SAÚDE', ps: ps } : null;
+}
+// Fechamento conforme o destino, com o pedido claro a quem recebe
+function fechamento(dk, pn, pot, cp) {
+  if (dk === 'sau') {
+    var pr = cp.profs.map(function (i) { return PROFS[i][1]; });
+    return 'Diante do exposto, a escola sugere ' + (pr.length ? 'avaliação de ' + joinPt(pr) : 'avaliação de profissional de saúde') +
+      ', a critério do serviço de saúde, para investigar os aspectos descritos neste relatório, que vêm interferindo na aprendizagem e na participação de ' + pn +
+      '. A escola se coloca à disposição para responder a questionários, receber orientações e prestar outras informações.';
+  }
+  if (dk === 'cras') return 'Diante do exposto, a escola solicita ao CRAS o acompanhamento da família de ' + pn +
+    ' e a avaliação da inclusão em serviços e programas da assistência social que possam apoiar sua permanência na escola e sua aprendizagem. A escola se coloca à disposição para atuar em conjunto com a rede.';
+  if (dk === 'ct') return 'Diante do exposto, e esgotados os recursos de que a escola dispõe, comunica-se a situação de ' + pn +
+    ' ao Conselho Tutelar, nos termos do art. 56 do Estatuto da Criança e do Adolescente (Lei nº 8.069/1990), para as providências cabíveis.';
+  var p = pot && pot.length ? lista('pot', pot.slice(0, 2)) : '';
+  return p ? 'A escola seguirá apoiando ' + pn + ' a partir do que já faz bem, como ' + p + ', e manterá contato com a família para acompanhar os próximos passos.'
+    : 'A escola permanece à disposição da família para acompanhar os próximos passos de ' + pn + '.';
+}
 function montar(est, ano, per, contribs) {
   var nome = nomeBonito(est.nome), ee = contribs.some(function (c) { return c.dados.ee; });
   var comps = contribs.map(function (c) { return c.componente; });
   var secs = [];
   var sujeito = cap(G.o) + ' estudante';
-  var pn = nomeChamado(est), reserv = !(docCtx && docCtx.semRes);
+  var pn = nomeChamado(est), dk = (docCtx && docCtx.dest) || 'int', D = DEST[dk], cp = complementos();
 
   // Identificação
-  secs.push({ t: 'IDENTIFICAÇÃO', ps: [
-    'O presente relatório refere-se ' + G.ao + ' estudante ' + nome + ', matriculad' + G.o + ' na turma ' + turmaNome(est.turma) +
+  var nasc = '';
+  if (cp.nasc) {
+    var idade = idadeEm(cp.nasc, ($('#d-data') && $('#d-data').value) || todayISO());
+    nasc = ', nascid' + G.o + ' em ' + fmtCurto(cp.nasc + 'T12:00:00') + (idade != null ? ' (' + idade + ' anos)' : '');
+  }
+  var ident = ['O presente relatório refere-se ' + G.ao + ' estudante ' + nome + nasc + ', matriculad' + G.o + ' na turma ' + turmaNome(est.turma) +
     ' do Ensino Fundamental da Escola Municipal Francisca Alves, e reúne as observações registradas ' + prefixo(comps).replace(/^E/, 'e').replace(/^N/, 'n') +
-    ', relativas ' + PERIODO_TXT[per] + (per === 'Anual' ? ' de ' : ' de ') + ano + '.' +
-    (ee ? ' ' + sujeito + ' integra o público da Educação Especial, razão pela qual este relatório também registra os recursos de acessibilidade e os apoios oferecidos.' : '')
-  ] });
+    ', relativas ' + PERIODO_TXT[per] + ' de ' + ano + '.' +
+    (ee ? ' ' + sujeito + ' integra o público da Educação Especial, razão pela qual este relatório também registra os recursos de acessibilidade e os apoios oferecidos.' : '')];
+  var i2 = [];
+  if (cp.sol) i2.push('O relatório foi solicitado ' + fim(cp.sol.replace(/^a /i, 'pela ').replace(/^o /i, 'pelo ').replace(/^(?!pel[oa] |por )/i, 'por ')));
+  if (cp.resp) i2.push('Responsável: ' + fim(cp.resp));
+  if (i2.length) ident.push(i2.join(' '));
+  var i3 = [];
+  if (cp.faltas != null) {
+    var pct = cp.dias ? Math.round(cp.faltas * 1000 / cp.dias) / 10 : null;
+    i3.push('No período, ' + G.o + ' estudante teve ' + cp.faltas + (cp.faltas === 1 ? ' falta' : ' faltas') +
+      (cp.dias ? ' em ' + cp.dias + ' dias letivos, o que corresponde a ' + String(pct).replace('.', ',') + '% de ausência' + (pct >= 25 ? ', acima do limite de 25% previsto na legislação educacional' : '') : '') + '.');
+  }
+  if (cp.hist) i3.push('Trajetória escolar: ' + fim(cp.hist));
+  if (cp.res) i3.push('Resultados de avaliações: ' + fim(cp.res));
+  if (i3.length) ident.push(i3.join(' '));
+  secs.push({ t: 'IDENTIFICAÇÃO', ps: ident });
 
   // Quem é o estudante: começa pelo que ele tem de bom, pelos vínculos e pelo que atravessa a vida dele
   var hum = [], h1 = [];
@@ -1286,10 +1620,11 @@ function montar(est, ano, per, contribs) {
   if (vin.length) h1.push((h1.length ? 'No convívio escolar, ' + G.o + ' estudante ' : 'No convívio escolar, ' + pn + ' ') + lista('vinc', vin) + '.');
   if (bem.length) h1.push('Quanto ao bem-estar, observou-se que ' + (h1.length ? G.o + ' estudante' : pn) + ' ' + lista('bem', bem) + '.');
   if (h1.length) hum.push(h1.join(' '));
-  if (reserv) {
-    var h2 = [], vu = uniao(contribs, 'vuln'), cu = uniao(contribs, 'cuid');
+  if (D.vuln) {
+    var h2 = [], vu = uniao(contribs, 'vuln'), cu = D.cuid ? uniao(contribs, 'cuid') : [];
+    if (D.vuln === 'saude') vu = cp.autoriza ? vu.filter(function (i) { return VULN_SAUDE[i]; }) : [];
     if (vu.length) h2.push('A escola tem conhecimento de situações que fazem parte da vida de ' + pn + ' e que podem interferir em sua aprendizagem e em seu bem-estar, como ' + lista('vuln', vu) +
-      '. Esses aspectos são registrados para que o percurso escolar seja compreendido em sua totalidade, e não para rotular ' + G.o + ' estudante.');
+      (D.vuln === 'saude' ? '. Essas informações constam deste relatório com autorização da família.' : '. Esses aspectos ajudam a compreender o percurso escolar ' + G.do + ' estudante.'));
     if (cu.length) h2.push((vu.length ? 'Diante disso, a escola realizou ' : 'No período, a escola realizou ') + 'ações de cuidado e de articulação com a rede, como ' + lista('cuid', cu) + '.');
     if (h2.length) hum.push(h2.join(' '));
   }
@@ -1315,6 +1650,9 @@ function montar(est, ano, per, contribs) {
     function (p, l) { return p + ', observou-se também ' + l + '.'; },
     function (p) { return p + ', não foram identificadas barreiras significativas à aprendizagem e à participação.'; });
   if (pBar.length) secs.push({ t: 'BARREIRAS À APRENDIZAGEM E À PARTICIPAÇÃO', ps: [pBar.join(' ')] });
+
+  // Observações para encaminhamento (saúde)
+  if (D.enc) { var se = secaoEnc(contribs); if (se) secs.push(se); }
 
   // Inclusão e acessibilidade
   var inc = [];
@@ -1369,14 +1707,15 @@ function montar(est, ano, per, contribs) {
     .sort(function (a, b) { return ((COMPPOR[a.componente] || {}).i || 99) - ((COMPPOR[b.componente] || {}).i || 99); })
     .map(function (c) { return encaixarConsid(c.consideracao, c.componente, est); });
   if (cons.length) fin.push(cons.join(' '));
-  fin.push('A escola reconhece a trajetória de ' + pn + ', valoriza cada avanço conquistado e reafirma o compromisso de seguir acompanhando seu desenvolvimento, em parceria com a família.');
+  fin.push(fechamento(dk, pn, pot, cp));
   if (fin.length) secs.push({ t: 'CONSIDERAÇÕES FINAIS E ENCAMINHAMENTOS', ps: fin });
 
   secs.forEach(function (s, i) { s.t = (i + 1) + '. ' + s.t; });
   var sigs = contribs.slice().sort(function (a, b) { return ((COMPPOR[a.componente] || {}).i || 99) - ((COMPPOR[b.componente] || {}).i || 99); })
     .map(function (c) { return c.professor + ' (' + c.componente + ')'; });
-  sigs.push('Coordenação pedagógica');
-  return { secs: secs, sigs: sigs, titulo: 'RELATÓRIO DE DESENVOLVIMENTO DO ESTUDANTE' };
+  sigs.push(assinatura(cp.coord, cp.coordbm, 'Coordenação pedagógica'));
+  if (dk !== 'int' || cp.dir) sigs.push(assinatura(cp.dir, cp.dirbm, 'Direção escolar'));
+  return { secs: secs, sigs: sigs, titulo: D.titulo };
 }
 
 // ---------- documento ----------
@@ -1403,7 +1742,8 @@ function abrirRelatorio(est, ano, per, voltar) {
     $('#d-gen').value = ed ? ed.genero : (/a$/.test(pn) && !/^(luca|joshua|nicola|batista|elias)$/.test(pn) ? 'a' : 'o');
     $('#d-data').value = (ed && ed.data) || $('#d-data').value || todayISO();
     $('#d-dest').value = 'int'; $('#btn-saled').disabled = false;
-    docCtx = { est: est, ano: ano, per: per, contribs: cs, voltar: voltar, edicao: ed, sujo: false, semRes: false };
+    docCtx = { est: est, ano: ano, per: per, contribs: cs, voltar: voltar, edicao: ed, sujo: false, dest: 'int' };
+    limparComplementos(); destUI();
     if (ed && ed.blocos && ed.blocos.length) renderBlocos(ed.blocos); else renderDoc();
     infoEdicao(); show('doc'); window.scrollTo(0, 0);
   }).catch(function (err) { carga(false); toast(err.message); });
@@ -1478,15 +1818,45 @@ $('#d-corrigir').addEventListener('click', function (e) {
 function marcarSujo() { if (!docCtx) return; docCtx.sujo = true; $('#d-msg').textContent = 'Alterações ainda não salvas.'; }
 $('#doc').addEventListener('input', marcarSujo);
 $('#d-gen').addEventListener('change', function () { renderDoc(); marcarSujo(); });
-// Versão para a família/outra instituição: refaz o texto sem os itens reservados e não deixa salvar por cima da versão interna
+// Destino do relatório: cada um refaz o texto com o que cabe a quem recebe. Só a versão interna pode ser salva.
+function destUI() {
+  var dk = (docCtx && docCtx.dest) || 'int';
+  $('#d-desthint').textContent = DEST[dk].dica;
+  $('#c-saude').hidden = dk !== 'sau';
+  if (dk !== 'int' && dk !== 'fam') $('#d-comp').open = true;
+}
+function limparComplementos() {
+  ['#c-nasc', '#c-faltas', '#c-dias', '#c-hist', '#c-res', '#c-resp', '#c-sol'].forEach(function (id) { $(id).value = ''; });
+  $('#c-autoriza').checked = false;
+  [].forEach.call(document.querySelectorAll('#c-prof input'), function (x) { x.checked = false; });
+  $('#d-comp').open = false;
+}
+(function () {
+  $('#c-prof').innerHTML = PROFS.map(function (p, i) { return '<label class="chip"><input type="checkbox" value="' + i + '"><span>' + esc(p[0]) + '</span></label>'; }).join('');
+  // nomes e matrículas da coordenação e da direção ficam no aparelho
+  ['c-coord', 'c-coordbm', 'c-dir', 'c-dirbm'].forEach(function (id) {
+    var el = $('#' + id); el.value = lsGet('rel_' + id) || '';
+    el.addEventListener('change', function () { lsSet('rel_' + id, el.value.trim() || null); });
+  });
+})();
 $('#d-dest').addEventListener('change', function () {
   if (!docCtx) return;
-  var ext = $('#d-dest').value === 'ext', ed = docCtx.edicao;
-  docCtx.semRes = ext;
-  if (!ext && ed && ed.blocos && ed.blocos.length) renderBlocos(ed.blocos); else renderDoc();
-  $('#btn-saled').disabled = ext;
-  $('#d-msg').textContent = ext ? 'Versão sem informações reservadas: imprima, baixe ou copie. Para salvar edição, volte ao uso interno.' : '';
-  if (ext && ed) toast('Texto refeito pelos registros, sem as informações reservadas. Ajustes feitos à mão na versão interna não aparecem aqui.');
+  var dk = $('#d-dest').value, ed = docCtx.edicao;
+  docCtx.dest = dk; destUI();
+  if (dk === 'int' && ed && ed.blocos && ed.blocos.length) renderBlocos(ed.blocos); else renderDoc();
+  $('#btn-saled').disabled = dk !== 'int';
+  $('#d-msg').textContent = dk !== 'int' ? 'Esta versão não fica salva: imprima, baixe ou copie. Para salvar edição, volte ao uso interno.' : '';
+  if (dk !== 'int' && ed) toast('Texto refeito pelos registros. Ajustes feitos à mão na versão interna não aparecem aqui.');
+});
+$('#c-aplicar').addEventListener('click', function () {
+  if (!docCtx) return;
+  var bt = this;
+  if (docCtx.dest === 'int' && docCtx.edicao && bt.dataset.conf !== '1') {
+    bt.dataset.conf = '1'; setTimeout(function () { bt.dataset.conf = ''; }, 4000);
+    toast('O texto será refeito pelos registros e a edição à mão não aparece. Toque de novo para aplicar.'); return;
+  }
+  bt.dataset.conf = '';
+  renderDoc(); marcarSujo(); toast('Dados aplicados ao texto');
 });
 $('#d-data').addEventListener('change', function () {
   var ps = $('#doc').querySelectorAll('p'), feito = false;
